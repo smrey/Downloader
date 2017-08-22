@@ -1,11 +1,15 @@
 
-//Create a config file containing the keys for access to BaseSpace using this application
-//var Config = require('config-js')??
-
 var request = require('request');
+var config = require('config-json');
+config.load("config.json");
+
+var clientKey = config.get('clientKey');
+var clientSecret = config.get('clientSecret');
+var apiServer = config.get('apiServer');
+var apiVersion = config.get('apiVersion');
 
 request.post(
-    "https://api.euc1.sh.basespace.illumina.com/v1pre3/oauthv2/deviceauthorization",
+    apiServer+apiVersion+"/oauthv2/deviceauthorization",
     { json: { "client_id": client_key, "response_type": "device_code", "scope": "BROWSE GLOBAL, CREATE GLOBAL" }},
     function (error, response, body) {
         console.log(body)
@@ -25,7 +29,7 @@ var device_code = '';
 
 //Loop this until 200 is returned or timeout
 request.post(
-    "https://api.euc1.sh.basespace.illumina.com/v1pre3/oauthv2/token",
+    apiServer+apiVersion+"/oauthv2/token",
     { json: { "client_id": client_key, "client_secret": client_secret, "code": device_code, "grant_type": "device" }},
     function (error, response, body) {
         if (!error && response.statusCode == 200) {
