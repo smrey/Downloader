@@ -1,4 +1,5 @@
 
+const opn = require('opn');
 var request = require('request');
 var config = require('config-json');
 config.load("config.json");
@@ -7,30 +8,32 @@ var clientKey = config.get('clientKey');
 var clientSecret = config.get('clientSecret');
 var apiServer = config.get('apiServer');
 var apiVersion = config.get('apiVersion');
+var deviceCode = ''; //Is there a better way to initialise a variable?
 
+//Ensure that user is previously logged on to the correct instance of BaseSpace (e.g. pmg1) and in the correct location
+//e.g. Cardiff or SMP2
+//Request authorisation for device
 request.post(
     apiServer+apiVersion+"/oauthv2/deviceauthorization",
-    { json: { "client_id": client_key, "response_type": "device_code", "scope": "BROWSE GLOBAL, CREATE GLOBAL" }},
+    { json: { "client_id": clientKey, "response_type": "device_code", "scope": "BROWSE GLOBAL, CREATE GLOBAL" }},
     function (error, response, body) {
-        console.log(body)
         if (!error && response.statusCode == 200) {
-            console.log(body)
+            //console.log(body);
+            //Get the device code from the JSON body output
+            deviceCode = body.device_code;
+            console.log(deviceCode)
+            //Open the url for the validation of the access
+            opn(body.verification_with_code_uri)
         }
     }
 );
 
-//Ensure that user is previously logged on to the correct instance of BaseSpace (e.g. pmg1) and in the correct location
-//e.g. Cardiff or SMP2
 
-//Open the url for the validation of the access
-
-//Set the device code to the response from the previous step
-var device_code = '';
-
+/*
 //Loop this until 200 is returned or timeout
 request.post(
     apiServer+apiVersion+"/oauthv2/token",
-    { json: { "client_id": client_key, "client_secret": client_secret, "code": device_code, "grant_type": "device" }},
+    { json: { "client_id": clientKey, "client_secret": clientSecret, "code": device_code, "grant_type": "device" }},
     function (error, response, body) {
         if (!error && response.statusCode == 200) {
             console.log(body)
@@ -40,3 +43,4 @@ request.post(
 
 //Set access_token variable to returned value from polling
 var access_token = '';
+*/
