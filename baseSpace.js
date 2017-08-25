@@ -15,8 +15,10 @@ var deviceCode = config.get('deviceCode');
 //Set access_token variable to returned value from polling
 var accessToken = config.get('accessToken');
 
-/*
+//Pass in the number of pairs that need to be complete- pass in from previous script
+var numPairs = 5;
 
+/*
 //Retrieve information regarding the user associated with the access token
 request.get(
     apiServer+apiVersion+"/users/current",
@@ -30,7 +32,6 @@ request.get(
 */
 
 /*
-
 //Retrieve all projects associated with the user associated with the access token
 request.get(
     apiServer+apiVersion+"/users/current/projects?SortBy=Id&Offset=0&Limit=20&SortDir=Asc",
@@ -44,6 +45,7 @@ request.get(
 );
 */
 
+/*
 //Information regarding project id 1513512
 request.get(
     apiServer+apiVersion+"/projects/1513512",
@@ -54,7 +56,9 @@ request.get(
         }
     }
 );
+*/
 
+/*
 //Appresults from project id 1513512
 //Can use this by Status key to figure out when is complete
 //Can use AppSession key to get appsession ID
@@ -69,7 +73,9 @@ request.get(
         }
     }
 );
+*/
 
+/*
 //Files in appresult 770770
 request.get(
     apiServer+apiVersion+"/appresults/770770/files?SortBy=Id&Extensions=.bam&Offset=0&Limit=20&SortDir=Asc",
@@ -80,20 +86,64 @@ request.get(
         }
     }
 );
+*/
 
-//Download file
+//Download file- insufficient permissions to download file- do later
 
-
-
+/*
 //Create project
+request.post(
+    apiServer+apiVersion+"/projects",
+    {qs: { "access_token": accessToken, "Name": "Proj" }},
+    function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            console.log(body)
+        }
+    }
+);
+*/
+
+/*
+var appSess = '';
+
+//Attempt polling- initial attempt to be polled- this probably won't work
+request.get(
+    apiServer+apiVersion+"/appsessions/"+appSess,
+    {qs: { "access_token": accessToken }},
+    function (error, response, body) {
+        console.log(body)
+        if (!error && response.statusCode == 200) {
+            console.log(body)
+        }
+    }
+);
+*/
+
+//Wait a bit before starting polling as it is known they won't be ready for a while
 
 
-//Upload data
-
-
-//Kick off app
-
-
-//Attempt polling
-
-
+//Attempt appResults through projectid
+request.get(
+    apiServer+apiVersion+"/projects/1604605/appresults",
+    {qs: { "access_token": accessToken }},
+    function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            //console.log(body);
+            var projectAppResults = JSON.parse(body);
+            var projectAppResultsLen = projectAppResults.Response.Items.length;
+            //console.log(projectAppResultsLen);
+            // See the status of all of the appSessions
+            var numComplete = 0;
+            for ( i = 0; i < projectAppResultsLen; i++ ) {
+                //console.log(projectAppResults.Response.Items[i].Status);
+                if (projectAppResults.Response.Items[i].Status === "Complete") {
+                    numComplete += 1;
+                }
+            }
+            if (projectAppResultsLen !== numPairs || numComplete !== numPairs) {
+                console.log("automated download failed");
+                return "automated download failed";
+            }
+        }
+    }
+);

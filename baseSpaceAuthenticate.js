@@ -14,13 +14,13 @@ var deviceCode = config.get('deviceCode');
 //Ensure that user is previously logged on to the correct instance of BaseSpace (e.g. pmg1) and in the correct location
 //e.g. Cardiff or SMP2
 //Request authorisation for device
-/*
+
 request.post(
     apiServer+apiVersion+"/oauthv2/deviceauthorization",
     { json: { "client_id": clientKey, "response_type": "device_code", "scope": "BROWSE GLOBAL, CREATE GLOBAL, CREATE PROJECTS" }},
     function (error, response, body) {
         if (!error && response.statusCode == 200) {
-            //console.log(body);
+            console.log(body);
             //Get the device code from the JSON body output
             deviceCode = body.device_code;
             console.log(deviceCode)
@@ -29,7 +29,7 @@ request.post(
         }
     }
 );
-*/
+
 /*
 function readJSON(filename){
     return readFile(filename, 'utf8').then(function (res){
