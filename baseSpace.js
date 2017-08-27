@@ -1,22 +1,22 @@
 
 var request = require('request');
 var config = require('config-json');
+//Load generic config file
 config.load("config.json");
 
 var clientKey = config.get('clientKey');
 var clientSecret = config.get('clientSecret');
 var apiServer = config.get('apiServer');
 var apiVersion = config.get('apiVersion');
-
-
-//Set the device code to the response from the previous step
+//Set the device code from the config file
 var deviceCode = config.get('deviceCode');
-
-//Set access_token variable to returned value from polling
+//Set accessToken variable from the config file
 var accessToken = config.get('accessToken');
+//Load run-specific config file
+config.load("runConfig.json");
+var numPairs = config.get("numPairs");
+var projectID = config.get("projectID");
 
-//Pass in the number of pairs that need to be complete- pass in from previous script
-var numPairs = 5;
 
 /*
 //Retrieve information regarding the user associated with the access token
@@ -119,31 +119,46 @@ request.get(
 );
 */
 
-//Wait a bit before starting polling as it is known they won't be ready for a while
+//Wait a bit before starting polling as it is known they won't be ready for a while- previous script
 
 
 //Attempt appResults through projectid
-request.get(
-    apiServer+apiVersion+"/projects/1604605/appresults",
-    {qs: { "access_token": accessToken }},
-    function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            //console.log(body);
-            var projectAppResults = JSON.parse(body);
-            var projectAppResultsLen = projectAppResults.Response.Items.length;
-            //console.log(projectAppResultsLen);
-            // See the status of all of the appSessions
-            var numComplete = 0;
-            for ( i = 0; i < projectAppResultsLen; i++ ) {
-                //console.log(projectAppResults.Response.Items[i].Status);
-                if (projectAppResults.Response.Items[i].Status === "Complete") {
-                    numComplete += 1;
+
+function pollAPI(){
+    var numComplete = 0;
+    request.get(
+        apiServer + apiVersion + "/projects/" + projectID + "/appresults",
+        {qs: {"access_token": accessToken}},
+        function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var projectAppResults = JSON.parse(body);
+                var projectAppResultsLen = projectAppResults.Response.Items.length;
+                //console.log(projectAppResultsLen);
+                // See the status of all of the appSessions
+                for (i = 0; i < projectAppResultsLen; i++) {
+                    //console.log(projectAppResults.Response.Items[i].Status);
+                    if (projectAppResults.Response.Items[i].Status === "Complete") {
+                        numComplete += 1;
+                    }
                 }
-            }
-            if (projectAppResultsLen !== numPairs || numComplete !== numPairs) {
-                console.log("automated download failed");
-                return "automated download failed";
+                if (projectAppResultsLen === numPairs && numComplete === numPairs) {
+                    console.log("all appSessions complete")
+                }
+                else{console.log(projectID);}
+                //if (projectAppResultsLen !== numPairs || numComplete !== numPairs) {
+                //console.log("automated download failed");
+                //return "automated download failed";
+                //}
             }
         }
-    }
-);
+    );
+}
+
+// Call functions
+//while (numComplete < numPairs) {
+    //pollAPI();
+//}
+pollAPI();
+
+//Execute pollAPI() after 3 seconds
+//setTimeout(pollAPI(), 3000)
