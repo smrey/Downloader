@@ -17,6 +17,10 @@ config.load("runConfig.json");
 var numPairs = config.get("numPairs");
 var projectID = config.get("projectID");
 
+//temp vars
+var fileID = config.get("fileIDexample");
+var appResultID = config.get("appResultIDexample");
+
 
 /*
 //Retrieve information regarding the user associated with the access token
@@ -46,64 +50,6 @@ request.get(
 */
 
 /*
-//Information regarding project id 1513512
-request.get(
-    apiServer+apiVersion+"/projects/1513512",
-    {qs: { "access_token": accessToken }},
-    function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body)
-        }
-    }
-);
-*/
-
-/*
-//Appresults from project id 1513512
-//Can use this by Status key to figure out when is complete
-//Can use AppSession key to get appsession ID
-//Might be a key to get the appresults- "Id" (nested a bit)- probably within each different appsessionid
-//From this result could potentially use nested "Name" key to retrieve associated data
-request.get(
-    apiServer+apiVersion+"/projects/1513512/appresults",
-    {qs: { "access_token": accessToken }},
-    function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body)
-        }
-    }
-);
-*/
-
-/*
-//Files in appresult 770770
-request.get(
-    apiServer+apiVersion+"/appresults/770770/files?SortBy=Id&Extensions=.bam&Offset=0&Limit=20&SortDir=Asc",
-    {qs: { "access_token": accessToken }},
-    function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body)
-        }
-    }
-);
-*/
-
-//Download file- insufficient permissions to download file- do later
-
-/*
-//Create project
-request.post(
-    apiServer+apiVersion+"/projects",
-    {qs: { "access_token": accessToken, "Name": "Proj" }},
-    function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body)
-        }
-    }
-);
-*/
-
-/*
 var appSess = '';
 
 //Attempt polling- initial attempt to be polled- this probably won't work
@@ -121,10 +67,15 @@ request.get(
 
 //Wait a bit before starting polling as it is known they won't be ready for a while- previous script
 
-
-//Attempt appResults through projectid
-
+//
 function pollAPI(){
+
+}
+
+//Access appResults through projectid
+//This is asynchronous- need to put in a callback to ensure that we can access the data
+
+function appResultsByProject(cb){
     var numComplete = 0;
     request.get(
         apiServer + apiVersion + "/projects/" + projectID + "/appresults",
@@ -132,23 +83,61 @@ function pollAPI(){
         function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 var projectAppResults = JSON.parse(body);
-                var projectAppResultsLen = projectAppResults.Response.Items.length;
-                //console.log(projectAppResultsLen);
-                // See the status of all of the appSessions
-                for (i = 0; i < projectAppResultsLen; i++) {
-                    //console.log(projectAppResults.Response.Items[i].Status);
-                    if (projectAppResults.Response.Items[i].Status === "Complete") {
-                        numComplete += 1;
-                    }
-                }
-                if (projectAppResultsLen === numPairs && numComplete === numPairs) {
-                    console.log("all appSessions complete")
-                }
-                else{console.log(projectID);}
-                //if (projectAppResultsLen !== numPairs || numComplete !== numPairs) {
-                //console.log("automated download failed");
-                //return "automated download failed";
-                //}
+                // console.log(projectAppResults.Response.Items);
+                //console.log(projectAppResults);
+                //temp below
+                appResultsID = projectAppResults.Response.Items[0].Id;
+                console.log(appResultsID);
+            }
+        }
+    );
+    //cb(response); //Not the right place for the asynchronous return
+}
+
+function checkAppResultsComplete(){
+    var projectAppResultsLen = projectAppResults.Response.Items.length;
+    //console.log(projectAppResultsLen);
+    // See the status of all of the appSessions
+    for (i = 0; i < projectAppResultsLen; i++) {
+        //console.log(projectAppResults.Response.Items[i].Status);
+        if (projectAppResults.Response.Items[i].Status === "Complete") {
+            numComplete += 1;
+        }
+    }
+    if (projectAppResultsLen === numPairs && numComplete === numPairs) {
+        console.log("all appSessions complete")
+    }
+    else{console.log(projectID);}
+    //if (projectAppResultsLen !== numPairs || numComplete !== numPairs) {
+    //console.log("automated download failed");
+    //return "automated download failed";
+    //}
+}
+
+
+// Get file IDs- example below for an appresult id to retrieve xlsx and bam files only
+function getFileIds() {
+    request.get(
+        apiServer + apiVersion + "/appresults/" + appResultID + "/files?SortBy=Id&Extensions=.xlsx,.bam&Offset=0&Limit=4&SortDir=Asc",
+        {qs: {"access_token": accessToken}},
+        function (error, response, body) {
+            console.log(body);
+            if (!error && response.statusCode == 200) {
+                //console.log(body);
+            }
+        }
+    );
+}
+
+// Download files- function needs work to specify a location to download to etc.
+function downloadFile() {
+    request.get(
+        apiServer + apiVersion + "/files/" + fileID + "/content",
+        {qs: {"access_token": accessToken}},
+        function (error, response, body) {
+            console.log(body);
+            if (!error && response.statusCode == 200) {
+                console.log(body);
             }
         }
     );
@@ -158,7 +147,12 @@ function pollAPI(){
 //while (numComplete < numPairs) {
     //pollAPI();
 //}
-pollAPI();
+var appResults = appResultsByProject();
+//console.log(appResults);
+
+//getFileIds();
+
+//downloadFile();
 
 //Execute pollAPI() after 3 seconds
 //setTimeout(pollAPI(), 3000)
