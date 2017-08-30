@@ -85,13 +85,10 @@ function appResultsByProject(cb){
                 var projectAppResults = JSON.parse(body);
                 // console.log(projectAppResults.Response.Items);
                 //console.log(projectAppResults);
-                //temp below
-                appResultsID = projectAppResults.Response.Items[0].Id;
-                console.log(appResultsID);
             }
+            cb(projectAppResults);
         }
     );
-    //cb(response); //Not the right place for the asynchronous return
 }
 
 function checkAppResultsComplete(){
@@ -147,7 +144,11 @@ function downloadFile() {
 //while (numComplete < numPairs) {
     //pollAPI();
 //}
-var appResults = appResultsByProject();
+
+//Call function asynchronously
+appResultsByProject(function(projectAppResults){
+    console.log(projectAppResults)
+});
 //console.log(appResults);
 
 //getFileIds();
