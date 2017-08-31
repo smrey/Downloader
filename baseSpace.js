@@ -95,20 +95,20 @@ function appResultsByProject(cb){
     );
 }
 
-function checkAppResultsComplete(){
-    var projectAppResultsLen = projectAppResults.Response.Items.length;
+function checkAppResultsComplete(appResults){
+    var projectAppResultsLen = appResults.Response.Items.length;
     //console.log(projectAppResultsLen);
     // See the status of all of the appSessions
     for (i = 0; i < projectAppResultsLen; i++) {
         //console.log(projectAppResults.Response.Items[i].Status);
-        if (projectAppResults.Response.Items[i].Status === "Complete") {
+        if (appResults.Response.Items[i].Status === "Complete") {
             numComplete += 1;
         }
     }
-    if (projectAppResultsLen === numPairs && numComplete === numPairs) {
+    if (appResultsLen === numPairs && numComplete === numPairs) {
         console.log("all appSessions complete")
     }
-    else{console.log(projectID);}
+    else{console.log("something else");}
     //if (projectAppResultsLen !== numPairs || numComplete !== numPairs) {
     //console.log("automated download failed");
     //return "automated download failed";
@@ -130,7 +130,7 @@ function getFileIds() {
     );
 }
 
-// Download files- function needs work to specify a location to download to etc.
+// Download files
 function downloadFile(fileIdentifier, outFile, cb) {
     var file = fs.createWriteStream(outFile);
     //var sendReq =
@@ -159,11 +159,25 @@ function downloadFile(fileIdentifier, outFile, cb) {
 //}
 
 //Call function asynchronously
-/* WORKING HERE
+ //WORKING HERE
 appResultsByProject(function(projectAppResults){
-    console.log(projectAppResults)
+    console.log(projectAppResults);
+});
+
+var x = appResultsByProject = function(results) {
+    console.log(results);
+}
+
+
+appResultsByProject('results', x);
+
+
+/*
+checkAppResultsComplete(x)(function(m){
+    console.log(m);
 });
 */
+
 //console.log(appResults);
 
 //getFileIds();
