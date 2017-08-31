@@ -77,7 +77,6 @@ function pollAPI(){
 //This is asynchronous- need to put in a callback to ensure that we can access the data
 
 function appResultsByProject(cb){
-    var numComplete = 0;
     request.get(
         apiServer + apiVersion + "/projects/" + projectID + "/appresults",
         {qs: {"access_token": accessToken}},
@@ -87,10 +86,10 @@ function appResultsByProject(cb){
                 return cb(projectAppResults);
             }
             else if (response.statusCode !== 200) {
-                return cb('Response status is ' + response.statusCode);
+                return cb('Response status is ' + response.statusCode + " " + body);
             }
-            else if (error){
-                return cb(error.message); //Is this syntax correct?
+            else if (error) {
+                return cb(error.message);
             }
         }
     );
@@ -132,17 +131,26 @@ function getFileIds() {
 }
 
 // Download files- function needs work to specify a location to download to etc.
-function downloadFile(fileIdentifier) {
-    request.get(
+function downloadFile(fileIdentifier, outFile, cb) {
+    var file = fs.createWriteStream(outFile);
+    //var sendReq =
+    var sendReq = request.get(
         apiServer + apiVersion + "/files/" + fileIdentifier + "/content",
         {qs: {"access_token": accessToken}},
         function (error, response, body) {
-            console.log(body);
             if (!error && response.statusCode === 200) {
-                console.log(body);
+                return cb("File " + fileIdentifier + " successfully retrieved")
+                //sendReq.pipe(file);
+            }
+            else if (response.statusCode !== 200) {
+                return cb('Response status is ' + response.statusCode + " " + body);
+            }
+            else if (error) {
+                return cb(error.message);
             }
         }
     );
+    sendReq.pipe(file)
 }
 
 // Call functions
@@ -151,7 +159,7 @@ function downloadFile(fileIdentifier) {
 //}
 
 //Call function asynchronously
-/*
+/* WORKING HERE
 appResultsByProject(function(projectAppResults){
     console.log(projectAppResults)
 });
@@ -160,10 +168,21 @@ appResultsByProject(function(projectAppResults){
 
 //getFileIds();
 
+
+
+//Rudimentary file download working below
 // Download a file
-//download(downloadFile(fileID),test.xlsx); //Additional dependency required
-var file = fs.createWriteStream();
-downloadFile(fileID);
+/*
+var outputFile = "fout.xlsx";
+downloadFile(fileID, outputFile, function(item){
+    console.log(item);
+});
+*/
+
+//Download file, version without printout- don't use as can't see callback error messages
+/*
+downloadFile(fileID, outputFile, function(){});
+*/
 
 //Execute pollAPI() after 3 seconds
 //setTimeout(pollAPI(), 3000)
