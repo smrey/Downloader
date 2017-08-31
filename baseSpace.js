@@ -1,6 +1,7 @@
 
 var request = require('request');
 var config = require('config-json');
+var fs = require('fs');
 //Load generic config file
 config.load("config.json");
 
@@ -81,12 +82,16 @@ function appResultsByProject(cb){
         apiServer + apiVersion + "/projects/" + projectID + "/appresults",
         {qs: {"access_token": accessToken}},
         function (error, response, body) {
-            if (!error && response.statusCode == 200) {
+            if (!error && response.statusCode === 200) {
                 var projectAppResults = JSON.parse(body);
-                // console.log(projectAppResults.Response.Items);
-                //console.log(projectAppResults);
+                return cb(projectAppResults);
             }
-            cb(projectAppResults);
+            else if (response.statusCode !== 200) {
+                return cb('Response status is ' + response.statusCode);
+            }
+            else if (error){
+                return cb(error.message); //Is this syntax correct?
+            }
         }
     );
 }
@@ -119,7 +124,7 @@ function getFileIds() {
         {qs: {"access_token": accessToken}},
         function (error, response, body) {
             console.log(body);
-            if (!error && response.statusCode == 200) {
+            if (!error && response.statusCode === 200) {
                 //console.log(body);
             }
         }
@@ -127,13 +132,13 @@ function getFileIds() {
 }
 
 // Download files- function needs work to specify a location to download to etc.
-function downloadFile() {
+function downloadFile(fileIdentifier) {
     request.get(
-        apiServer + apiVersion + "/files/" + fileID + "/content",
+        apiServer + apiVersion + "/files/" + fileIdentifier + "/content",
         {qs: {"access_token": accessToken}},
         function (error, response, body) {
             console.log(body);
-            if (!error && response.statusCode == 200) {
+            if (!error && response.statusCode === 200) {
                 console.log(body);
             }
         }
@@ -146,14 +151,19 @@ function downloadFile() {
 //}
 
 //Call function asynchronously
+/*
 appResultsByProject(function(projectAppResults){
     console.log(projectAppResults)
 });
+*/
 //console.log(appResults);
 
 //getFileIds();
 
-//downloadFile();
+// Download a file
+//download(downloadFile(fileID),test.xlsx); //Additional dependency required
+var file = fs.createWriteStream();
+downloadFile(fileID);
 
 //Execute pollAPI() after 3 seconds
 //setTimeout(pollAPI(), 3000)
