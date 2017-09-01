@@ -92,10 +92,11 @@ function appResultsByProject(cb){
     );
 }
 
+
 function checkAppResultsComplete(appResults){
+    console.log("Running"); //For testing purposes
     var numComplete = 0;
     var appResultsLen = appResults.Response.Items.length;
-    //console.log();
     // See the status of all of the appSessions
     for (i = 0; i < appResultsLen; i++) {
         //console.log(appResults.Response.Items[i].Status);
@@ -104,14 +105,14 @@ function checkAppResultsComplete(appResults){
         }
     }
     if (appResultsLen === NUMPAIRS && numComplete === NUMPAIRS) {
-        console.log("all appSessions complete")
+        var comp = "all appSessions complete";
+        console.log(comp);
+        return "ww";
+        //terminate- return here
     }
-    else{console.log("something else");}
-    //if (appResultsLen !== NUMPAIRS || numComplete !== NUMPAIRS) {
-    //console.log("automated download failed");
-    //return "automated download failed";
-    //}
 }
+
+setInterval(function(){appResultsByProject(checkAppResultsComplete)}, 5000); //Increase polling interval for real case
 
 
 // Get file IDs- example below for an appresult id to retrieve xlsx and bam files only
@@ -172,7 +173,7 @@ var getResults = function(results) {
 //appResultsByProject(getResults);
 
 //Attempt at CPS style
-appResultsByProject(checkAppResultsComplete);
+//console.log(appResultsByProject(checkAppResultsComplete));
 
 //getFileIds();
 
