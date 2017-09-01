@@ -95,10 +95,12 @@ function appResultsByProject(cb){
     );
 }
 
-function checkAppResultsComplete(appResults){
-    var projectAppResultsLen = appResults.Response.Items.length;
-    //console.log(projectAppResultsLen);
+function checkAppResultsComplete(){
+    var res = appResultsByProject(getResults);
+    var projectAppResultsLen = res.Response.Items.length;
+    console.log(projectAppResultsLen);
     // See the status of all of the appSessions
+    /*
     for (i = 0; i < projectAppResultsLen; i++) {
         //console.log(projectAppResults.Response.Items[i].Status);
         if (appResults.Response.Items[i].Status === "Complete") {
@@ -113,6 +115,7 @@ function checkAppResultsComplete(appResults){
     //console.log("automated download failed");
     //return "automated download failed";
     //}
+    */
 }
 
 
@@ -160,29 +163,28 @@ function downloadFile(fileIdentifier, outFile, cb) {
 
 //Call function asynchronously
  //WORKING HERE
+/*
 appResultsByProject(function(projectAppResults){
     console.log(projectAppResults);
 });
-
-var x = appResultsByProject = function(results) {
-    console.log(results);
-}
-
-
-appResultsByProject('results', x);
-
-
-/*
-checkAppResultsComplete(x)(function(m){
-    console.log(m);
-});
 */
 
-//console.log(appResults);
+var getResults = function(results) {
+    console.log(results);
+};
+
+//appResultsByProject(getResults);
+
+checkAppResultsComplete();
+
+/*
+checkAppResultsComplete(appResultsByProject(getResults)) {
+    console.log(m);
+}
+*/
+
 
 //getFileIds();
-
-
 
 //Rudimentary file download working below
 // Download a file
