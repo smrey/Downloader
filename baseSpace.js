@@ -95,9 +95,9 @@ function appResultsByProject(cb){
     );
 }
 
-function checkAppResultsComplete(cb){
-    var res = appResultsByProject(getResults);
-    //console.log(res);
+function checkAppResultsComplete(appResults){
+    var res = appResults;
+    console.log(res);
     //var projectAppResultsLen = res.Response.Items.length;
     //console.log(projectAppResultsLen);
     // See the status of all of the appSessions
@@ -173,19 +173,12 @@ appResultsByProject(function(projectAppResults){
 // This function prints the results of the calling function to the output console
 var getResults = function(results) {
     console.log(results);
-    var res = results;
 };
-// Calling the above fucntion nested in the appResultsByProject function below
+// Calling the above function nested in the appResultsByProject function
 //appResultsByProject(getResults);
 
-checkAppResultsComplete();
-
-/*
-checkAppResultsComplete(appResultsByProject(getResults)) {
-    console.log(m);
-}
-*/
-
+//Attempt at CPS style
+appResultsByProject(checkAppResultsComplete);
 
 //getFileIds();
 
