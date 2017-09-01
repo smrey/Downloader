@@ -96,14 +96,12 @@ function appResultsByProject(cb){
 }
 
 function checkAppResultsComplete(appResults){
-    var res = appResults;
-    console.log(res);
-    //var projectAppResultsLen = res.Response.Items.length;
-    //console.log(projectAppResultsLen);
+    var numComplete = 0;
+    var appResultsLen = appResults.Response.Items.length;
+    //console.log();
     // See the status of all of the appSessions
-    /*
-    for (i = 0; i < projectAppResultsLen; i++) {
-        //console.log(projectAppResults.Response.Items[i].Status);
+    for (i = 0; i < appResultsLen; i++) {
+        //console.log(appResults.Response.Items[i].Status);
         if (appResults.Response.Items[i].Status === "Complete") {
             numComplete += 1;
         }
@@ -112,11 +110,10 @@ function checkAppResultsComplete(appResults){
         console.log("all appSessions complete")
     }
     else{console.log("something else");}
-    //if (projectAppResultsLen !== numPairs || numComplete !== numPairs) {
+    //if (appResultsLen !== numPairs || numComplete !== numPairs) {
     //console.log("automated download failed");
     //return "automated download failed";
     //}
-    */
 }
 
 
