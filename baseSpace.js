@@ -95,10 +95,11 @@ function appResultsByProject(cb){
     );
 }
 
-function checkAppResultsComplete(){
+function checkAppResultsComplete(cb){
     var res = appResultsByProject(getResults);
-    var projectAppResultsLen = res.Response.Items.length;
-    console.log(projectAppResultsLen);
+    //console.log(res);
+    //var projectAppResultsLen = res.Response.Items.length;
+    //console.log(projectAppResultsLen);
     // See the status of all of the appSessions
     /*
     for (i = 0; i < projectAppResultsLen; i++) {
@@ -169,10 +170,12 @@ appResultsByProject(function(projectAppResults){
 });
 */
 
+// This function prints the results of the calling function to the output console
 var getResults = function(results) {
     console.log(results);
+    var res = results;
 };
-
+// Calling the above fucntion nested in the appResultsByProject function below
 //appResultsByProject(getResults);
 
 checkAppResultsComplete();
