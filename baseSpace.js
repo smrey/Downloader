@@ -102,10 +102,13 @@ function checkAppResultsComplete(appResults){
     console.log("Running"); //For testing purposes
     var numComplete = 0;
     var appResultsLen = appResults.Response.Items.length;
+    var appResultsArr = [];
     // See the status of all of the appSessions
     for (i = 0; i < appResultsLen; i++) {
         if (appResults.Response.Items[i].Status === "Complete") {
             numComplete += 1;
+            // Store the appResults IDs which are needed for donwnloading the files
+            appResultsArr[i] = appResults.Response.Items[i].Id
         }
     }
     //Stop execution of the polling function after a certain time has elapsed (assume the process has failed after this time)
@@ -117,7 +120,8 @@ function checkAppResultsComplete(appResults){
         var comp = "all appSessions complete";
         console.log(comp);
         //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
-
+        //In here want to call another function to kick off getting appresults, getting fileids and download of results
+        console.log(appResultsArr); //Testing array correctly populated
     }
     else {
         setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)
