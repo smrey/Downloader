@@ -18,6 +18,13 @@ config.load("runConfig.json");
 var NUMPAIRS = config.get("numPairs");
 var PROJECTID = config.get("projectID");
 
+// Obtain time at which script was launched to enable later timeout
+var STARTTIME = new Date().getTime();
+
+// Variables- adjust these to the desired intervals for polling and timeout of the script
+var POLLINGINTERVAL = 5000;
+var TIMEOUT = 60000;
+
 //temp vars
 var fileID = config.get("fileIDexample");
 var appResultID = config.get("appResultIDexample");
@@ -72,7 +79,6 @@ request.get(
 
 //Access appResults through projectid
 //This is asynchronous- need to put in a callback to ensure that we can access the data
-
 function appResultsByProject(cb){
     request.get(
         APISERVER + APIVERSION + "/projects/" + PROJECTID + "/appresults",
@@ -92,28 +98,36 @@ function appResultsByProject(cb){
     );
 }
 
-
 function checkAppResultsComplete(appResults){
     console.log("Running"); //For testing purposes
     var numComplete = 0;
     var appResultsLen = appResults.Response.Items.length;
     // See the status of all of the appSessions
     for (i = 0; i < appResultsLen; i++) {
-        //console.log(appResults.Response.Items[i].Status);
         if (appResults.Response.Items[i].Status === "Complete") {
             numComplete += 1;
         }
     }
-    if (appResultsLen === NUMPAIRS && numComplete === NUMPAIRS) {
+    //Stop execution of the polling function after a certain time has elapsed (assume the process has failed after this time)
+    if (new Date().getTime() - STARTTIME > TIMEOUT){
+        clearTimeout(poll);
+        //Raise error?
+    }
+    else if (appResultsLen === NUMPAIRS && numComplete === NUMPAIRS) {
         var comp = "all appSessions complete";
         console.log(comp);
-        return "ww";
-        //terminate- return here
+        //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
+
+    }
+    else {
+        setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)
     }
 }
 
-setInterval(function(){appResultsByProject(checkAppResultsComplete)}, 5000); //Increase polling interval for real case
-
+// Repeatedly call the function to check if the results are complete or not
+function poll(){
+    setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL); //Increase polling interval for real case
+}
 
 // Get file IDs- example below for an appresult id to retrieve xlsx and bam files only
 function getFileIds() {
@@ -153,9 +167,7 @@ function downloadFile(fileIdentifier, outFile, cb) {
 }
 
 // Call functions
-//while (numComplete < NUMPAIRS) {
-    //pollAPI();
-//}
+poll();
 
 //Call function asynchronously
  //WORKING HERE
