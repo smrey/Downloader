@@ -21,6 +21,12 @@ var PROJECTID = config.get("projectID");
 // Obtain time at which script was launched to enable later timeout
 var STARTTIME = new Date().getTime();
 
+var FILES = [];
+
+// Variables which may need adjusting
+var TEMPLATE = "SMP2_CRUK_V2_03.15.xlsx"; //Update manually if it changes
+var NEGATIVECONTROL = "NTC"; //See if can pass from script 1
+
 // Variables- adjust these to the desired intervals for polling and timeout of the script
 var POLLINGINTERVAL = 10000;
 var TIMEOUT = 7200000; // 60000 is 1 minute
@@ -82,6 +88,7 @@ function checkAppResultsComplete(appResults){
 }
 
 // Repeatedly call the function to check if the results are complete or not
+//HOW TO SEE THE CONSOLE FROM THIS FUNCTION?? NEEDED FOR ERROR VALUES
 function poll(){
     setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL); //Increase polling interval for real case
 }
@@ -91,14 +98,15 @@ function iter(appResArr) {
     for (i = 0; i < appResArr.length; i++) {
         console.log(appResArr[i]); //for testing
         //getFileIds(appResArr[i]); //Change this line to call an asynchronous function
-        getFileIds(appResArr[i],function(){});
+        getFileIds(appResArr[i],function(res){console.log(res);});
     }
+    return "Successful call to get the file identifiers"
 }
 
 // Get file IDs- example below for an appresult id to retrieve xlsx, bam and bai files only
 function getFileIds(appResultId, cb) {
     console.log("Getting files");
-    var files = {};
+    var FILES = []; //Temp working out how best to download
     var sendReq = request.get(
         APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bam,.bai&Offset=0&Limit=50&SortDir=Asc",
         {qs: {"access_token": ACCESSTOKEN}},
@@ -110,16 +118,18 @@ function getFileIds(appResultId, cb) {
                 for (i = 0; i < appResultFileslen; i++) {
                     var fileID = appResultFiles.Response.Items[i].Id;
                     var fileName = appResultFiles.Response.Items[i].Name;
-                    console.log(fileID); //for testing
-                    console.log(fileName); //for testing
                     // Store the file ids which are needed for downloading the files
-                    // fileName: fileID
-                    // Download file
-                    cb(downloadFile(fileID, fileName, function(o){console.log(o)}))
-
-                    //return cb(downloadFile(fileID, fileName)); //need to call this and the previous function asynchronously
+                    // Skip the NTC bam and template xls file
+                    if (fileName !== TEMPLATE && fileName !== NEGATIVECONTROL+".bam"){
+                        //FILES.push({ [fileName] : fileID}); // Syntax unsupported except in ES6
+                        var tempObj = {};
+                        tempObj[fileName] = fileID;
+                        FILES.push(tempObj);
+                    }
                 }
-                return cb("Files downloading");
+                //console.log(FILES);
+                return cb(iter2(FILES));
+                //return cb("Files for appResult " + appResultId + " identified");
             }
             else if (response.statusCode !== 200) {
                 return cb('Response status is ' + response.statusCode + " " + body);
@@ -131,22 +141,40 @@ function getFileIds(appResultId, cb) {
     );
 }
 
+// Iterate over file IDs to download files
+function iter2(fileResults) {
+    for (i in Object.keys(fileResults)){
+        console.log(i);
+
+        //getFileIds(appResArr[i]); //Change this line to call an asynchronous function
+
+        //getFileIds(appResArr[i],function(res){console.log(res);});
+    }
+    //return "Successful call to download files";
+}
+
+// Download file
+//cb(downloadFile(fileID, fileName, function(o){console.log(o)}));
+//cb(downloadFile(fileID, fileName));
+
+
+
 // Download files
-function downloadFile(fileIdentifier, outFile, cb) {
+function downloadFile(fileIdentifier, outFile) {
     var writeFile = fs.createWriteStream(outFile);
     var sendReq = request.get(
         APISERVER + APIVERSION + "/files/" + fileIdentifier + "/content",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
-                return cb("File " + fileIdentifier + " successfully retrieved")
+                return "File " + fileIdentifier + " successfully retrieved"
                 //sendReq.pipe(writefile);
             }
             else if (response.statusCode !== 200) {
-                return cb('Response status is ' + response.statusCode + " " + body);
+                return 'Response status is ' + response.statusCode + " " + body;
             }
             else if (error) {
-                return cb(error.message);
+                return error.message;
             }
         }
     );
