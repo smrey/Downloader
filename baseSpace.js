@@ -59,7 +59,7 @@ function checkAppResultsComplete(appResults){
     for (i = 0; i < appResultsLen; i++) {
         if (appResults.Response.Items[i].Status === "Complete") {
             numComplete += 1;
-            // Store the appResults IDs which are needed for donwnloading the files
+            // Store the appResults IDs which are needed for downloading the files
             appResultsArr[i] = appResults.Response.Items[i].Id
         }
     }
@@ -90,19 +90,28 @@ function poll(){
 function iter(appResArr) {
     for (i = 0; i < appResArr.length; i++) {
         console.log(appResArr[i]); //for testing
-        getFileIds(appResArr[i]);
+        //getFileIds(appResArr[i]); //Change this line to call an asynchronous function
+        getFileIds(appResArr[i],function(res){console.log(res)});
     }
 }
 
 // Get file IDs- example below for an appresult id to retrieve xlsx, bam and bai files only
-function getFileIds(appResultId) {
-    request.get(
+function getFileIds(appResultId, cb) {
+    console.log("Getting files");
+    var sendReq = request.get(
         APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bam,.bai&Offset=0&Limit=50&SortDir=Asc",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
-            console.log(body);
             if (!error && response.statusCode === 200) {
-                //console.log(body);
+                return cb("Appresult " + appResultId + " successfully retrieved")
+            }
+            else if (response.statusCode !== 200) {
+                return cb('Response status is ' + response.statusCode + " " + body);
+            }
+            else if (error) {
+                return cb(error.message);
+
+                /*
                 var appResultFiles = JSON.parse(body);
                 var appResultFileslen = appResultFiles.Response.Items.length;
                 for (i = 0; i < appResultFileslen; i++) {
@@ -111,8 +120,9 @@ function getFileIds(appResultId) {
                     console.log(fileID);
                     console.log(fileName);
                     // Download file
-                    downloadFile(fileID, fileName); //need to call this and the previous function asynchronously
+                    //downloadFile(fileID, fileName); //need to call this and the previous function asynchronously
                 }
+                */
             }
         }
     );
@@ -121,7 +131,6 @@ function getFileIds(appResultId) {
 // Download files
 function downloadFile(fileIdentifier, outFile, cb) {
     var file = fs.createWriteStream(outFile);
-    //var sendReq =
     var sendReq = request.get(
         APISERVER + APIVERSION + "/files/" + fileIdentifier + "/content",
         {qs: {"access_token": ACCESSTOKEN}},
@@ -152,10 +161,12 @@ appResultsByProject(function(projectAppResults){
 });
 */
 
+/*
 // This function prints the results of the calling function to the output console
 var getResults = function(results) {
     console.log(results);
 };
+*/
 // Calling the above function nested in the appResultsByProject function
 //appResultsByProject(getResults);
 
