@@ -22,8 +22,8 @@ var PROJECTID = config.get("projectID");
 var STARTTIME = new Date().getTime();
 
 // Variables- adjust these to the desired intervals for polling and timeout of the script
-var POLLINGINTERVAL = 5000;
-var TIMEOUT = 60000;
+var POLLINGINTERVAL = 10000;
+var TIMEOUT = 7200000; // 60000 is 1 minute
 
 //temp vars
 var fileID = config.get("fileIDexample");
