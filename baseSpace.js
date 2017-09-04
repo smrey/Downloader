@@ -29,54 +29,6 @@ var TIMEOUT = 7200000; // 60000 is 1 minute
 var fileID = config.get("fileIDexample");
 var appResultID = config.get("appResultIDexample");
 
-
-/*
-//Retrieve information regarding the user associated with the access token
-request.get(
-    APISERVER+APIVERSION+"/users/current",
-    {qs: { "access_token": ACCESSTOKEN }},
-    function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body)
-        }
-    }
-);
-*/
-
-/*
-//Retrieve all projects associated with the user associated with the access token
-request.get(
-    APISERVER+APIVERSION+"/users/current/projects?SortBy=Id&Offset=0&Limit=20&SortDir=Asc",
-    //"https://api.euc1.sh.basespace.illumina.com/v1pre3/users/current/projects?SortBy=Id&Offset=0&Limit=20&SortDir=Asc",
-    {qs: { "access_token": ACCESSTOKEN }},
-    function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body)
-        }
-    }
-);
-*/
-
-/*
-var appSess = '';
-
-//Attempt polling- initial attempt to be polled- this probably won't work
-request.get(
-    APISERVER+APIVERSION+"/appsessions/"+appSess,
-    {qs: { "access_token": ACCESSTOKEN }},
-    function (error, response, body) {
-        console.log(body)
-        if (!error && response.statusCode == 200) {
-            console.log(body)
-        }
-    }
-);
-*/
-
-//Wait a bit before starting polling as it is known they won't be ready for a while- previous script
-
-//
-
 //Access appResults through projectid
 //This is asynchronous- need to put in a callback to ensure that we can access the data
 function appResultsByProject(cb){
@@ -122,6 +74,7 @@ function checkAppResultsComplete(appResults){
         //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
         //In here want to call another function to kick off getting appresults, getting fileids and download of results
         console.log(appResultsArr); //Testing array correctly populated
+        iter(appResultsArr);
     }
     else {
         setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)
@@ -133,15 +86,33 @@ function poll(){
     setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL); //Increase polling interval for real case
 }
 
-// Get file IDs- example below for an appresult id to retrieve xlsx and bam files only
-function getFileIds() {
+// Iterate over appresults ids to get all file ids
+function iter(appResArr) {
+    for (i = 0; i < appResArr.length; i++) {
+        console.log(appResArr[i]); //for testing
+        getFileIds(appResArr[i]);
+    }
+}
+
+// Get file IDs- example below for an appresult id to retrieve xlsx, bam and bai files only
+function getFileIds(appResultId) {
     request.get(
-        APISERVER + APIVERSION + "/appresults/" + appResultID + "/files?SortBy=Id&Extensions=.xlsx,.bam&Offset=0&Limit=4&SortDir=Asc",
+        APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bam,.bai&Offset=0&Limit=50&SortDir=Asc",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             console.log(body);
             if (!error && response.statusCode === 200) {
                 //console.log(body);
+                var appResultFiles = JSON.parse(body);
+                var appResultFileslen = appResultFiles.Response.Items.length;
+                for (i = 0; i < appResultFileslen; i++) {
+                    var fileID = appResultFiles.Response.Items[i].Id;
+                    var fileName = appResultFiles.Response.Items[i].Name;
+                    console.log(fileID);
+                    console.log(fileName);
+                    // Download file
+                    downloadFile(fileID, fileName); //need to call this and the previous function asynchronously
+                }
             }
         }
     );
