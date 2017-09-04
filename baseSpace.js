@@ -91,38 +91,41 @@ function iter(appResArr) {
     for (i = 0; i < appResArr.length; i++) {
         console.log(appResArr[i]); //for testing
         //getFileIds(appResArr[i]); //Change this line to call an asynchronous function
-        getFileIds(appResArr[i],function(res){console.log(res)});
+        getFileIds(appResArr[i],function(){});
     }
 }
 
 // Get file IDs- example below for an appresult id to retrieve xlsx, bam and bai files only
 function getFileIds(appResultId, cb) {
     console.log("Getting files");
+    var files = {};
     var sendReq = request.get(
         APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bam,.bai&Offset=0&Limit=50&SortDir=Asc",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
-                return cb("Appresult " + appResultId + " successfully retrieved")
+                //return cb("Appresult " + appResultId + " successfully retrieved")
+                var appResultFiles = JSON.parse(body);
+                var appResultFileslen = appResultFiles.Response.Items.length;
+                for (i = 0; i < appResultFileslen; i++) {
+                    var fileID = appResultFiles.Response.Items[i].Id;
+                    var fileName = appResultFiles.Response.Items[i].Name;
+                    console.log(fileID); //for testing
+                    console.log(fileName); //for testing
+                    // Store the file ids which are needed for downloading the files
+                    // fileName: fileID
+                    // Download file
+                    cb(downloadFile(fileID, fileName, function(o){console.log(o)}))
+
+                    //return cb(downloadFile(fileID, fileName)); //need to call this and the previous function asynchronously
+                }
+                return cb("Files downloading");
             }
             else if (response.statusCode !== 200) {
                 return cb('Response status is ' + response.statusCode + " " + body);
             }
             else if (error) {
                 return cb(error.message);
-
-                /*
-                var appResultFiles = JSON.parse(body);
-                var appResultFileslen = appResultFiles.Response.Items.length;
-                for (i = 0; i < appResultFileslen; i++) {
-                    var fileID = appResultFiles.Response.Items[i].Id;
-                    var fileName = appResultFiles.Response.Items[i].Name;
-                    console.log(fileID);
-                    console.log(fileName);
-                    // Download file
-                    //downloadFile(fileID, fileName); //need to call this and the previous function asynchronously
-                }
-                */
             }
         }
     );
@@ -130,14 +133,14 @@ function getFileIds(appResultId, cb) {
 
 // Download files
 function downloadFile(fileIdentifier, outFile, cb) {
-    var file = fs.createWriteStream(outFile);
+    var writeFile = fs.createWriteStream(outFile);
     var sendReq = request.get(
         APISERVER + APIVERSION + "/files/" + fileIdentifier + "/content",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
                 return cb("File " + fileIdentifier + " successfully retrieved")
-                //sendReq.pipe(file);
+                //sendReq.pipe(writefile);
             }
             else if (response.statusCode !== 200) {
                 return cb('Response status is ' + response.statusCode + " " + body);
@@ -147,7 +150,7 @@ function downloadFile(fileIdentifier, outFile, cb) {
             }
         }
     );
-    sendReq.pipe(file)
+    sendReq.pipe(writeFile);
 }
 
 // Call functions
