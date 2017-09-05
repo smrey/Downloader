@@ -56,7 +56,7 @@ function appResultsByProject(cb){
     );
 }
 
-function checkAppResultsComplete(appResults){
+function checkAppResultsComplete(appResults, cb){
     console.log("Running"); //For testing purposes
     var numComplete = 0;
     var appResultsLen = appResults.Response.Items.length;
@@ -80,17 +80,22 @@ function checkAppResultsComplete(appResults){
         //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
         //In here want to call another function to kick off getting appresults, getting fileids and download of results
         console.log(appResultsArr); //Testing array correctly populated
-        return appResultsArr;
+        return cb(appResultsArr);
     }
     else {
-        setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)
+        //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)
+        console.log("would be set timeout");
     }
 }
 
 // Repeatedly call the function to check if the results are complete or not
 //HOW TO SEE THE CONSOLE FROM THIS FUNCTION?? NEEDED FOR ERROR VALUES- also prints undefined for function though
-function poll(){
-    setTimeout(function(res){appResultsByProject(checkAppResultsComplete); console.log(res);}, POLLINGINTERVAL); //Increase polling interval for real case
+//Change here for asynchronous
+function poll(cb){
+    //setTimeout(function(res){appResultsByProject(checkAppResultsComplete); console.log(res);}, POLLINGINTERVAL); //Increase polling interval for real case
+    appResultsByProject(function(appRes){
+        checkAppResultsComplete(appRes, function(){});
+    });
 }
 
 // Iterate over appresults ids to get all file ids
