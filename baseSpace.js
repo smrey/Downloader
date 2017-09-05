@@ -29,7 +29,7 @@ var NEGATIVECONTROL = "NTC"; //See if can pass from script 1
 
 // Variables- adjust these to the desired intervals for polling and timeout of the script
 var POLLINGINTERVAL = 10000;
-var TIMEOUT = 7200000; // 60000 is 1 minute
+var TIMEOUT = 7200000; // 60000 is 1 minute // 7200000 is 2 hours
 
 //temp vars
 var fileID = config.get("fileIDexample");
@@ -56,7 +56,7 @@ function appResultsByProject(cb){
     );
 }
 
-function checkAppResultsComplete(appResults, cb){
+function checkAppResultsComplete(appResults, cb) {
     console.log("Running"); //For testing purposes
     var numComplete = 0;
     var appResultsLen = appResults.Response.Items.length;
@@ -70,8 +70,8 @@ function checkAppResultsComplete(appResults, cb){
         }
     }
     //Stop execution of the polling function after a certain time has elapsed (assume the process has failed after this time)
-    if (new Date().getTime() - STARTTIME > TIMEOUT){
-        clearTimeout(poll);
+    if (new Date().getTime() - STARTTIME > TIMEOUT) {
+        return cb ("Polling timed out")
         //Raise error?
     }
     else if (appResultsLen === NUMPAIRS && numComplete === NUMPAIRS) {
@@ -82,20 +82,15 @@ function checkAppResultsComplete(appResults, cb){
         console.log(appResultsArr); //Testing array correctly populated
         return cb(appResultsArr);
     }
-    else {
-        //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)
-        console.log("would be set timeout");
-    }
 }
 
 // Repeatedly call the function to check if the results are complete or not
-//HOW TO SEE THE CONSOLE FROM THIS FUNCTION?? NEEDED FOR ERROR VALUES- also prints undefined for function though
-//Change here for asynchronous
 function poll(cb){
-    //setTimeout(function(res){appResultsByProject(checkAppResultsComplete); console.log(res);}, POLLINGINTERVAL); //Increase polling interval for real case
-    appResultsByProject(function(appRes){
-        checkAppResultsComplete(appRes, function(){});
-    });
+    setInterval(function(){
+        appResultsByProject(function(appRes){
+            checkAppResultsComplete(appRes, function(res){console.log(res)});
+        });
+    }, POLLINGINTERVAL);
 }
 
 // Iterate over appresults ids to get all file ids
