@@ -44,7 +44,7 @@ function appResultsByProject(cb){
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
                 var projectAppResults = JSON.parse(body);
-                return cb(projectAppResults);
+                return cb(projectAppResults, console.log("App results successfully retrieved"));
             }
             else if (response.statusCode !== 200) {
                 return cb('Response status is ' + response.statusCode + " " + body);
@@ -66,7 +66,7 @@ function checkAppResultsComplete(appResults){
         if (appResults.Response.Items[i].Status === "Complete") {
             numComplete += 1;
             // Store the appResults IDs which are needed for downloading the files
-            appResultsArr[i] = appResults.Response.Items[i].Id
+            appResultsArr[i] = appResults.Response.Items[i].Id;
         }
     }
     //Stop execution of the polling function after a certain time has elapsed (assume the process has failed after this time)
@@ -80,7 +80,7 @@ function checkAppResultsComplete(appResults){
         //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
         //In here want to call another function to kick off getting appresults, getting fileids and download of results
         console.log(appResultsArr); //Testing array correctly populated
-        iter(appResultsArr);
+        return appResultsArr;
     }
     else {
         setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)
@@ -88,9 +88,9 @@ function checkAppResultsComplete(appResults){
 }
 
 // Repeatedly call the function to check if the results are complete or not
-//HOW TO SEE THE CONSOLE FROM THIS FUNCTION?? NEEDED FOR ERROR VALUES
+//HOW TO SEE THE CONSOLE FROM THIS FUNCTION?? NEEDED FOR ERROR VALUES- also prints undefined for function though
 function poll(){
-    setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL); //Increase polling interval for real case
+    setTimeout(function(res){appResultsByProject(checkAppResultsComplete); console.log(res);}, POLLINGINTERVAL); //Increase polling interval for real case
 }
 
 // Iterate over appresults ids to get all file ids
@@ -143,13 +143,13 @@ function getFileIds(appResultId, cb) {
 
 // Iterate over file IDs to download files
 function iter2(fileResults) {
-    for (i in Object.keys(fileResults)){
-        console.log(i);
+    //for (i in Object.keys(fileResults)){
+        //console.log(i);
 
         //getFileIds(appResArr[i]); //Change this line to call an asynchronous function
 
         //getFileIds(appResArr[i],function(res){console.log(res);});
-    }
+    //}
     //return "Successful call to download files";
 }
 
