@@ -17,6 +17,7 @@ var ACCESSTOKEN = config.get('accessToken');
 config.load("runConfig.json");
 var NUMPAIRS = config.get("numPairs");
 var PROJECTID = config.get("projectID");
+var NEGATIVECONTROL = config.get("negativeControl");
 
 // Obtain time at which script was launched to enable later timeout
 var STARTTIME = new Date().getTime();
@@ -25,7 +26,6 @@ var FILES = [];
 
 // Variables which may need adjusting
 var TEMPLATE = "SMP2_CRUK_V2_03.15.xlsx"; //Update manually if it changes
-var NEGATIVECONTROL = "NTC"; //See if can pass from script 1
 
 // Variables- adjust these to the desired intervals for polling and timeout of the script
 var POLLINGINTERVAL = 10000;
