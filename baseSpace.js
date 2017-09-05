@@ -93,12 +93,25 @@ function poll(cb){
     }, POLLINGINTERVAL);
 }
 
+//WORKING HERE
+
+//temp variable for making recursive function work
+appResArr = [ '959969', '960975', '960976', '961967', '961968' ];
+iterRecur(appResArr, 0);
+
+function iterRecur(appResArr, i){
+    if (i < appResArr.length) {
+        console.log(appResArr[i]);
+        return iterRecur(appResArr, i+1);
+    }
+}
+
 // Iterate over appresults ids to get all file ids
 function iter(appResArr) {
     for (i = 0; i < appResArr.length; i++) {
         console.log(appResArr[i]); //for testing
         //getFileIds(appResArr[i]); //Change this line to call an asynchronous function
-        getFileIds(appResArr[i],function(res){console.log(res);});
+        //getFileIds(appResArr[i],function(res){console.log(res);}));
     }
     return "Successful call to get the file identifiers"
 }
