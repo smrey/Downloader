@@ -56,7 +56,7 @@ function appResultsByProject(cb){
     );
 }
 
-function checkAppResultsComplete(appResults, cb) {
+function checkAppResultsComplete(appResults, refresh, cb) {
     console.log("Running"); //For testing purposes
     var numComplete = 0;
     var appResultsLen = appResults.Response.Items.length;
@@ -76,11 +76,10 @@ function checkAppResultsComplete(appResults, cb) {
         //Raise error?
     }
     else if (appResultsLen === NUMPAIRS && numComplete === NUMPAIRS) {
-        var comp = "all appSessions complete";
-        console.log(comp);
+        clearInterval(refresh);
+        console.log("all appSessions complete");
         //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
         //In here want to call another function to kick off getting appresults, getting fileids and download of results
-        console.log(appResultsArr); //Testing array correctly populated
         return cb(appResultsArr);
     }
 }
@@ -89,7 +88,7 @@ function checkAppResultsComplete(appResults, cb) {
 function poll(cb){
     var refresh = setInterval(function(){
         appResultsByProject(function(appRes){
-            checkAppResultsComplete(appRes, function(res){console.log(res)});
+            checkAppResultsComplete(appRes, refresh, function(res){console.log(res)});
         });
     }, POLLINGINTERVAL);
 }
