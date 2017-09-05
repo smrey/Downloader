@@ -29,7 +29,7 @@ var NEGATIVECONTROL = "NTC"; //See if can pass from script 1
 
 // Variables- adjust these to the desired intervals for polling and timeout of the script
 var POLLINGINTERVAL = 10000;
-var TIMEOUT = 60000; // 60000 is 1 minute // 7200000 is 2 hours
+var TIMEOUT = 20000; // 60000 is 1 minute // 7200000 is 2 hours
 
 //temp vars
 var fileID = config.get("fileIDexample");
@@ -63,7 +63,7 @@ function checkAppResultsComplete(appResults, cb) {
     var appResultsArr = [];
     // See the status of all of the appSessions
     for (i = 0; i < appResultsLen; i++) {
-        if (appResults.Response.Items[i].Status !== "Complete") {
+        if (appResults.Response.Items[i].Status === "Complete") {
             numComplete += 1;
             // Store the appResults IDs which are needed for downloading the files
             appResultsArr[i] = appResults.Response.Items[i].Id;
@@ -71,7 +71,8 @@ function checkAppResultsComplete(appResults, cb) {
     }
     //Stop execution of the polling function after a certain time has elapsed (assume the process has failed after this time)
     if (new Date().getTime() - STARTTIME > TIMEOUT) {
-        return cb("Polling timed out")
+        clearInterval(refresh);
+        return cb("Polling timed out");
         //Raise error?
     }
     else if (appResultsLen === NUMPAIRS && numComplete === NUMPAIRS) {
@@ -86,7 +87,7 @@ function checkAppResultsComplete(appResults, cb) {
 
 // Repeatedly call the function to check if the results are complete or not
 function poll(cb){
-    setInterval(function(){
+    var refresh = setInterval(function(){
         appResultsByProject(function(appRes){
             checkAppResultsComplete(appRes, function(res){console.log(res)});
         });
