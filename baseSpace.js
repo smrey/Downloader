@@ -91,7 +91,7 @@ function poll(cb){
             checkAppResultsComplete(appRes, refresh, function(res) {
                 console.log(res);
                 //Working here
-                iterRecur(res, 0);
+                iterAppRes(res, 0);
             });
         });
     }, POLLINGINTERVAL);
@@ -103,14 +103,27 @@ function poll(cb){
 //appResArr = [ '1010011', '1010012', '1011011', '1012012', '1012013' ];
 //iterRecur(appResArr, 0);
 
+
 // Iterate over appresults ids to get all file ids
-function iterRecur(appResArr, i){
+function iterAppRes(appResArr, i){
     if (i < appResArr.length) {
         console.log(appResArr[i]);
         //Do function call
         getFileIds(appResArr[i], function(ret){
             console.log(ret);
-            iterRecur(appResArr, i+1);
+            iterAppRes(appResArr, i+1);
+        });
+    }
+}
+
+function iterFileId(appResFiles, i) {
+    if (i < appResFiles.Response.Items.length) {
+        var fileId = appResFiles.Response.Items[i].Id;
+        console.log(fileId);
+        var fileName = appResFiles.Response.Items[i].Name;
+        downloadFile(fileId, fileName, function(data){
+            console.log(data);
+            iterFileId(iterFileId(appResFiles, i+1));
         });
     }
 }
@@ -128,7 +141,8 @@ function getFileIds(appResultId, cb) {
                 //return cb("Appresult " + appResultId + " successfully retrieved")
                 var appResultFiles = JSON.parse(body);
                 var appResultFileslen = appResultFiles.Response.Items.length;
-                //Change this forloop to recursion
+                iterFileId(appResultFiles, 0);
+                /*
                 for (i = 0; i < appResultFileslen; i++) {
                     var fileID = appResultFiles.Response.Items[i].Id;
                     var fileName = appResultFiles.Response.Items[i].Name;
@@ -141,8 +155,9 @@ function getFileIds(appResultId, cb) {
                         FILES.push(tempObj);
                     }
                 }
+                */
                 //console.log(FILES);
-                return cb(FILES);
+                //return cb(FILES);
                 //cb(iter2(FILES));
                 //return cb("Files for appResult " + appResultId + " identified");
             }
@@ -156,40 +171,22 @@ function getFileIds(appResultId, cb) {
     );
 }
 
-// Iterate over file IDs to download files
-function iter2(fileResults) {
-    //for (i in Object.keys(fileResults)){
-        //console.log(i);
-
-        //getFileIds(appResArr[i]); //Change this line to call an asynchronous function
-
-        //getFileIds(appResArr[i],function(res){console.log(res);});
-    //}
-    //return "Successful call to download files";
-}
-
-// Download file
-//cb(downloadFile(fileID, fileName, function(o){console.log(o)}));
-//cb(downloadFile(fileID, fileName));
-
-
-
 // Download files
-function downloadFile(fileIdentifier, outFile) {
+function downloadFile(fileIdentifier, outFile, cb) {
     var writeFile = fs.createWriteStream(outFile);
     var sendReq = request.get(
         APISERVER + APIVERSION + "/files/" + fileIdentifier + "/content",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
-                return "File " + fileIdentifier + " successfully retrieved"
+                return cb("File " + fileIdentifier + " successfully retrieved");
                 //sendReq.pipe(writefile);
             }
             else if (response.statusCode !== 200) {
-                return 'Response status is ' + response.statusCode + " " + body;
+                return cb('Response status is ' + response.statusCode + " " + body);
             }
             else if (error) {
-                return error.message;
+                return cb(error.message);
             }
         }
     );
