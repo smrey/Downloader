@@ -88,7 +88,11 @@ function checkAppResultsComplete(appResults, refresh, cb) {
 function poll(cb){
     var refresh = setInterval(function(){
         appResultsByProject(function(appRes){
-            checkAppResultsComplete(appRes, refresh, function(res){console.log(res)});
+            checkAppResultsComplete(appRes, refresh, function(res) {
+                console.log(res);
+                //Working here
+                iterRecur(res, 0);
+            });
         });
     }, POLLINGINTERVAL);
 }
@@ -96,25 +100,21 @@ function poll(cb){
 //WORKING HERE
 
 //temp variable for making recursive function work
-appResArr = [ '1010011', '1010012', '1011011', '1012012', '1012013' ];
-iterRecur(appResArr, 0);
+//appResArr = [ '1010011', '1010012', '1011011', '1012012', '1012013' ];
+//iterRecur(appResArr, 0);
 
+// Iterate over appresults ids to get all file ids
 function iterRecur(appResArr, i){
     if (i < appResArr.length) {
         console.log(appResArr[i]);
-        return iterRecur(appResArr, i+1);
+        //Do function call
+        getFileIds(appResArr[i], function(ret){
+            console.log(ret);
+            iterRecur(appResArr, i+1);
+        });
     }
 }
 
-// Iterate over appresults ids to get all file ids
-function iter(appResArr) {
-    for (i = 0; i < appResArr.length; i++) {
-        console.log(appResArr[i]); //for testing
-        //getFileIds(appResArr[i]); //Change this line to call an asynchronous function
-        //getFileIds(appResArr[i],function(res){console.log(res);}));
-    }
-    return "Successful call to get the file identifiers"
-}
 
 // Get file IDs- example below for an appresult id to retrieve xlsx, bam and bai files only
 function getFileIds(appResultId, cb) {
@@ -128,6 +128,7 @@ function getFileIds(appResultId, cb) {
                 //return cb("Appresult " + appResultId + " successfully retrieved")
                 var appResultFiles = JSON.parse(body);
                 var appResultFileslen = appResultFiles.Response.Items.length;
+                //Change this forloop to recursion
                 for (i = 0; i < appResultFileslen; i++) {
                     var fileID = appResultFiles.Response.Items[i].Id;
                     var fileName = appResultFiles.Response.Items[i].Name;
@@ -141,7 +142,8 @@ function getFileIds(appResultId, cb) {
                     }
                 }
                 //console.log(FILES);
-                return cb(iter2(FILES));
+                return cb(FILES);
+                //cb(iter2(FILES));
                 //return cb("Files for appResult " + appResultId + " identified");
             }
             else if (response.statusCode !== 200) {
