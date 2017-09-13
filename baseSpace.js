@@ -123,7 +123,10 @@ function iterFileId(appResFiles, i, cb) {
             var tempObj = {};
             tempObj[fileName] = fileID;
             FILES.push(tempObj);
+            // Implement callback properly here
+            downloadFile(fileId, fileName);
             iterFileId(appResFiles, i + 1);
+
         }
     }
     console.log(FILES);
@@ -141,27 +144,7 @@ function getFileIds(appResultId, cb) {
             if (!error && response.statusCode === 200) {
                 //return cb("Appresult " + appResultId + " successfully retrieved")
                 var appResultFiles = JSON.parse(body);
-                //var appResultFileslen = appResultFiles.Response.Items.length;
                 cb(iterFileId(appResultFiles, 0));
-                //return cb(appResultFiles);
-                /*
-                for (i = 0; i < appResultFileslen; i++) {
-                    var fileID = appResultFiles.Response.Items[i].Id;
-                    var fileName = appResultFiles.Response.Items[i].Name;
-                    // Store the file ids which are needed for downloading the files
-                    // Skip the NTC bam and template xls file
-                    if (fileName !== TEMPLATE && fileName !== NEGATIVECONTROL+".bam"){
-                        //FILES.push({ [fileName] : fileID}); // Syntax unsupported except in ES6
-                        var tempObj = {};
-                        tempObj[fileName] = fileID;
-                        FILES.push(tempObj);
-                    }
-                }
-                */
-                //console.log(FILES);
-                //return cb(FILES);
-                //cb(iter2(FILES));
-                //return cb("Files for appResult " + appResultId + " identified");
             }
             else if (response.statusCode !== 200) {
                 return cb('Response status is ' + response.statusCode + " " + body);
@@ -173,11 +156,6 @@ function getFileIds(appResultId, cb) {
     );
 }
 
-function nextStage() {
-    console.log("Do something");
-}
-
-//iterFileId(appResultFiles, 0);
 
 // Download files
 function downloadFile(fileIdentifier, outFile, cb) {
@@ -198,7 +176,7 @@ function downloadFile(fileIdentifier, outFile, cb) {
             }
         }
     );
-    sendReq.pipe(writeFile);
+    cb(sendReq.pipe(writeFile));
 }
 
 // Call functions
