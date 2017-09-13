@@ -91,7 +91,8 @@ function poll(cb){
             checkAppResultsComplete(appRes, refresh, function(res) {
                 console.log(res);
                 //Working here
-                iterAppRes(res, 0, function(){});
+                iterAppRes(res, 0, function(){
+                });
             });
         });
     }, POLLINGINTERVAL);
@@ -104,6 +105,7 @@ function iterAppRes(appResArr, i){
     if (i < appResArr.length) {
         console.log(appResArr[i]);
         //Do function call
+        //This bit here needs to be a callback
         getFileIds(appResArr[i], function(ret){
             //console.log(ret);
             iterAppRes(appResArr, i+1);
@@ -116,11 +118,15 @@ function iterFileId(appResFiles, i, cb) {
         var fileId = appResFiles.Response.Items[i].Id;
         console.log(fileId);
         var fileName = appResFiles.Response.Items[i].Name;
-        cb(downloadFile(fileId, fileName, function(data){
-            console.log(data);
-            iterFileId(appResFiles, i+1);
-        }));
+        if (fileName !== TEMPLATE && fileName !== NEGATIVECONTROL + ".bam") {
+            //FILES.push({ [fileName] : fileID}); // Syntax unsupported except in ES6
+            var tempObj = {};
+            tempObj[fileName] = fileID;
+            FILES.push(tempObj);
+            iterFileId(appResFiles, i + 1);
+        }
     }
+    console.log(FILES);
 }
 
 
@@ -196,49 +202,6 @@ function downloadFile(fileIdentifier, outFile, cb) {
 }
 
 // Call functions
-poll( function(m){
-    //console.log(m);
-    nextStage( function(n){
-        console.log(n);
-    });
+poll(function(x){
+    console.log(x);
 });
-
-
-//Call function asynchronously
- //WORKING HERE
-/*
-appResultsByProject(function(projectAppResults){
-    console.log(projectAppResults);
-});
-*/
-
-/*
-// This function prints the results of the calling function to the output console
-var getResults = function(results) {
-    console.log(results);
-};
-*/
-// Calling the above function nested in the appResultsByProject function
-//appResultsByProject(getResults);
-
-//Attempt at CPS style
-//console.log(appResultsByProject(checkAppResultsComplete));
-
-//getFileIds();
-
-//Rudimentary file download working below
-// Download a file
-/*
-var outputFile = "fout.xlsx";
-downloadFile(fileID, outputFile, function(item){
-    console.log(item);
-});
-*/
-
-//Download file, version without printout- don't use as can't see callback error messages
-/*
-downloadFile(fileID, outputFile, function(){});
-*/
-
-//Execute pollAPI() after 3 seconds
-//setTimeout(pollAPI(), 3000)
