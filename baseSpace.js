@@ -91,7 +91,7 @@ function poll(cb){
             checkAppResultsComplete(appRes, refresh, function(res) {
                 console.log(res);
                 //Working here
-                iterAppRes(res, 0);
+                iterAppRes(res, 0, function(){});
             });
         });
     }, POLLINGINTERVAL);
@@ -99,32 +99,27 @@ function poll(cb){
 
 //WORKING HERE
 
-//temp variable for making recursive function work
-//appResArr = [ '1010011', '1010012', '1011011', '1012012', '1012013' ];
-//iterRecur(appResArr, 0);
-
-
 // Iterate over appresults ids to get all file ids
 function iterAppRes(appResArr, i){
     if (i < appResArr.length) {
         console.log(appResArr[i]);
         //Do function call
         getFileIds(appResArr[i], function(ret){
-            console.log(ret);
+            //console.log(ret);
             iterAppRes(appResArr, i+1);
         });
     }
 }
 
-function iterFileId(appResFiles, i) {
+function iterFileId(appResFiles, i, cb) {
     if (i < appResFiles.Response.Items.length) {
         var fileId = appResFiles.Response.Items[i].Id;
         console.log(fileId);
         var fileName = appResFiles.Response.Items[i].Name;
-        downloadFile(fileId, fileName, function(data){
+        cb(downloadFile(fileId, fileName, function(data){
             console.log(data);
-            iterFileId(iterFileId(appResFiles, i+1));
-        });
+            iterFileId(appResFiles, i+1);
+        }));
     }
 }
 
@@ -140,8 +135,9 @@ function getFileIds(appResultId, cb) {
             if (!error && response.statusCode === 200) {
                 //return cb("Appresult " + appResultId + " successfully retrieved")
                 var appResultFiles = JSON.parse(body);
-                var appResultFileslen = appResultFiles.Response.Items.length;
-                iterFileId(appResultFiles, 0);
+                //var appResultFileslen = appResultFiles.Response.Items.length;
+                cb(iterFileId(appResultFiles, 0));
+                //return cb(appResultFiles);
                 /*
                 for (i = 0; i < appResultFileslen; i++) {
                     var fileID = appResultFiles.Response.Items[i].Id;
@@ -171,6 +167,12 @@ function getFileIds(appResultId, cb) {
     );
 }
 
+function nextStage() {
+    console.log("Do something");
+}
+
+//iterFileId(appResultFiles, 0);
+
 // Download files
 function downloadFile(fileIdentifier, outFile, cb) {
     var writeFile = fs.createWriteStream(outFile);
@@ -194,7 +196,13 @@ function downloadFile(fileIdentifier, outFile, cb) {
 }
 
 // Call functions
-poll();
+poll( function(m){
+    //console.log(m);
+    nextStage( function(n){
+        console.log(n);
+    });
+});
+
 
 //Call function asynchronously
  //WORKING HERE
