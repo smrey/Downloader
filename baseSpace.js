@@ -81,6 +81,7 @@ function checkAppResultsComplete(appResults, refresh, cb) {
         //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
         //In here want to call another function to kick off getting appresults, getting fileids and download of results
         return cb(appResultsArr);
+        //return cb(iterAppRes(appResultsArr, 0, function(){}));
     }
 }
 
@@ -91,7 +92,14 @@ function poll(cb){
             checkAppResultsComplete(appRes, refresh, function(res) {
                 console.log(res);
                 //Working here
-                iterAppRes(res, 0, function(){
+                iterAppRes(res, 0, function(t){
+                    console.log(t);
+                    getFileIds(t, function(s){
+                        console.log(s);
+                        iterFileId(s, 0, function(q){
+                            console.log(q);
+                        });
+                    });
                 });
             });
         });
@@ -101,15 +109,16 @@ function poll(cb){
 //WORKING HERE
 
 // Iterate over appresults ids to get all file ids
-function iterAppRes(appResArr, i){
+function iterAppRes(appResArr, i, cb){
     if (i < appResArr.length) {
         console.log(appResArr[i]);
         //Do function call
         //This bit here needs to be a callback
-        getFileIds(appResArr[i], function(ret){
+        //getFileIds(appResArr[i], function(ret){
             //console.log(ret);
-            iterAppRes(appResArr, i+1);
-        });
+        return cb(appResArr[i], console.log("App results successfully retrieved"));
+        //iterAppRes(appResArr, i+1); //Note that without this it will only do the first app res for now- TESTING
+        //});
     }
 }
 
@@ -123,13 +132,14 @@ function iterFileId(appResFiles, i, cb) {
             var tempObj = {};
             tempObj[fileName] = fileID;
             FILES.push(tempObj);
-            // Implement callback properly here
-            downloadFile(fileId, fileName);
-            iterFileId(appResFiles, i + 1);
-
+            // Implement callback properly here- it isn't working- file download function is not downloading files
+            //downloadFile(fileId, fileName, function(y){
+                //console.log(y);
+                //iterFileId(appResFiles, i+1);
+            //});
         }
     }
-    console.log(FILES);
+    return (console.log(FILES));
 }
 
 
@@ -137,14 +147,15 @@ function iterFileId(appResFiles, i, cb) {
 function getFileIds(appResultId, cb) {
     console.log("Getting files");
     var FILES = []; //Temp working out how best to download
-    var sendReq = request.get(
+    console.log(appResultId);
+    request.get(
         APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bam,.bai&Offset=0&Limit=50&SortDir=Asc",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
                 //return cb("Appresult " + appResultId + " successfully retrieved")
                 var appResultFiles = JSON.parse(body);
-                cb(iterFileId(appResultFiles, 0));
+                return cb(appResultFiles, 0);
             }
             else if (response.statusCode !== 200) {
                 return cb('Response status is ' + response.statusCode + " " + body);
@@ -156,6 +167,7 @@ function getFileIds(appResultId, cb) {
     );
 }
 
+downloadFile(62511599, "out");
 
 // Download files
 function downloadFile(fileIdentifier, outFile, cb) {
@@ -165,7 +177,13 @@ function downloadFile(fileIdentifier, outFile, cb) {
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
-                return cb("File " + fileIdentifier + " successfully retrieved");
+                //var r = sendReq.pipe(writeFile);
+                cb(writeFile.on('close', function(){
+                    console.log("File " + fileIdentifier + " successfully retrieved");
+                }),
+                sendReq.pipe(writeFile));
+
+                //return cb("File " + fileIdentifier + " successfully retrieved");
                 //sendReq.pipe(writefile);
             }
             else if (response.statusCode !== 200) {
@@ -176,10 +194,11 @@ function downloadFile(fileIdentifier, outFile, cb) {
             }
         }
     );
-    cb(sendReq.pipe(writeFile));
 }
 
-// Call functions
+// Call functions- uncomment at the end to check is working- currently working on why downlad file is not working
+/*
 poll(function(x){
     console.log(x);
 });
+*/
