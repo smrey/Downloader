@@ -22,19 +22,22 @@ function iterator(appRes, cb){
     console.log(appR);
     (function oneAppRes() {
         var appResId = appR.splice(0, 1)[0];
-        console.log(appResId);
-        getFileIds(appResId, function (fileIds) {
-            console.log(fileIds);
+        //console.log(appResId);
+        getFileIds(appResId, function(fileIds) {
+            //console.log(fileIds);
         //if (err) {
-            //callback(err);
+            //cb(err);
             //return
         //}
         if (appR.length === 0) {
             cb("File ids retrieved");
         }
         else {
-            console.log("Iterating again");
-            oneAppRes();
+            iterFileId(fileIds, 0, function(d) {
+                console.log(d);
+                console.log("Iterating again");
+                oneAppRes(); //This isn't being called
+            });
         }
         });
     })();
@@ -85,8 +88,11 @@ function iterAppRes(appResArr, i, cb){
 }
 
 function iterFileId(appResFiles, i, cb) {
-    if (i < appResFiles.Response.Items.length) {
-        var f = [];
+    numFiles = appResFiles.Response.Items.length;
+    if (i === (numFiles-1)){
+        return (console.log("Files download completed"));
+    }
+    if (i < (numFiles-1)) {
         var fileId = appResFiles.Response.Items[i].Id;
         console.log(fileId);
         var fileName = appResFiles.Response.Items[i].Name;
@@ -94,7 +100,6 @@ function iterFileId(appResFiles, i, cb) {
             downloadFile(fileId, fileName, function(y){console.log(y), iterFileId(appResFiles, i+1);});
         }
     }
-    //return (console.log(FILES));
 }
 
 
@@ -109,6 +114,7 @@ function getFileIds(appResultId, cb) {
             if (!error && response.statusCode === 200) {
                 var appResultFiles = JSON.parse(body);
                 return cb(appResultFiles);
+                //return cb(iterFileId(appResultFiles,0, function(p){console.log(p)}));
             }
             else if (response.statusCode !== 200) {
                 return cb('Response status is ' + response.statusCode + " " + body);
