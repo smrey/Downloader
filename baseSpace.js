@@ -5,12 +5,12 @@ var fs = require('fs');
 //Load generic config file
 config.load("config.json");
 
-var CLIENTKEY = config.get('clientKey');
-var CLIENTSECRET = config.get('clientSecret');
+//var CLIENTKEY = config.get('clientKey');
+//var CLIENTSECRET = config.get('clientSecret');
 var APISERVER = config.get('apiServer');
 var APIVERSION = config.get('apiVersion');
 //Set the device code from the config file
-var DEVICECODE = config.get('deviceCode');
+//var DEVICECODE = config.get('deviceCode');
 //Set accessToken variable from the config file
 var ACCESSTOKEN = config.get('accessToken');
 //Load run-specific config file
@@ -28,8 +28,8 @@ var FILES = [];
 var TEMPLATE = "SMP2_CRUK_V2_03.15.xlsx"; //Update manually if it changes
 
 // Variables- adjust these to the desired intervals for polling and timeout of the script
-var POLLINGINTERVAL = 10000;
-var TIMEOUT = 20000; // 60000 is 1 minute // 7200000 is 2 hours
+var POLLINGINTERVAL = 60000;
+var TIMEOUT = 720000; // 60000 is 1 minute // 7200000 is 2 hours
 
 //temp vars
 var fileID = config.get("fileIDexample");
@@ -89,15 +89,16 @@ function checkAppResultsComplete(appResults, refresh, cb) {
 function poll(cb){
     var refresh = setInterval(function(){
         appResultsByProject(function(appRes){
-            checkAppResultsComplete(appRes, refresh, function(res) {
-                console.log(res);
+            checkAppResultsComplete(appRes, refresh, function(appResIds) {
+                //console.log(appRes);
                 //Working here
-                iterAppRes(res, 0, function(t){
-                    console.log(t);
-                    getFileIds(t, function(s){
-                        console.log(s);
-                        iterFileId(s, 0, function(q){
-                            console.log(q);
+                iterAppRes(appResIds, 0, function(appResId){
+                    console.log(appResId);
+                    getFileIds(appResId, function(fileIds){
+                        //console.log(s);
+                        iterFileId(fileIds, 0, function(fileIdName){
+                            console.log(fileIdName);
+                            downloadFile(fileIdName[1],fileIdName[0], function(h){});
                         });
                     });
                 });
@@ -111,7 +112,7 @@ function poll(cb){
 // Iterate over appresults ids to get all file ids
 function iterAppRes(appResArr, i, cb){
     if (i < appResArr.length) {
-        console.log(appResArr[i]);
+        //console.log(appResArr[i]);
         //Do function call
         //This bit here needs to be a callback
         //getFileIds(appResArr[i], function(ret){
@@ -124,14 +125,18 @@ function iterAppRes(appResArr, i, cb){
 
 function iterFileId(appResFiles, i, cb) {
     if (i < appResFiles.Response.Items.length) {
+        var f = [];
         var fileId = appResFiles.Response.Items[i].Id;
         console.log(fileId);
         var fileName = appResFiles.Response.Items[i].Name;
         if (fileName !== TEMPLATE && fileName !== NEGATIVECONTROL + ".bam") {
             //FILES.push({ [fileName] : fileID}); // Syntax unsupported except in ES6
-            var tempObj = {};
-            tempObj[fileName] = fileID;
-            FILES.push(tempObj);
+            //var tempObj = {};
+            //tempObj[fileName] = fileID;
+            //FILES.push(tempObj);
+            f[0] = fileName;
+            f[1] = fileID;
+            return cb(f);
             // Implement callback properly here- it isn't working- file download function is not downloading files
             //downloadFile(fileId, fileName, function(y){
                 //console.log(y);
@@ -139,21 +144,19 @@ function iterFileId(appResFiles, i, cb) {
             //});
         }
     }
-    return (console.log(FILES));
+    //return (console.log(FILES));
 }
 
 
 // Get file IDs- example below for an appresult id to retrieve xlsx, bam and bai files only
 function getFileIds(appResultId, cb) {
-    console.log("Getting files");
-    var FILES = []; //Temp working out how best to download
+    console.log("Getting file Ids");
     console.log(appResultId);
     request.get(
         APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bam,.bai&Offset=0&Limit=50&SortDir=Asc",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
-                //return cb("Appresult " + appResultId + " successfully retrieved")
                 var appResultFiles = JSON.parse(body);
                 return cb(appResultFiles, 0);
             }
@@ -167,21 +170,28 @@ function getFileIds(appResultId, cb) {
     );
 }
 
-downloadFile(62511599, "out");
-
-// Download files
+// Download files- needs error handling, but working
 function downloadFile(fileIdentifier, outFile, cb) {
     var writeFile = fs.createWriteStream(outFile);
-    var sendReq = request.get(
+    request.get(
         APISERVER + APIVERSION + "/files/" + fileIdentifier + "/content",
-        {qs: {"access_token": ACCESSTOKEN}},
+        {qs: {"access_token": ACCESSTOKEN}}).pipe(writeFile).on('close', function(){cb()});
+
+
+        /*
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
-                //var r = sendReq.pipe(writeFile);
-                cb(writeFile.on('close', function(){
+                file = body;
+                console.log(file);
+                var r = file.pipe(writeFile);
+                */
+
+                /*
+                return cb(writeFile.on('close', function(){
+                    sendReq.pipe(writeFile);
                     console.log("File " + fileIdentifier + " successfully retrieved");
-                }),
-                sendReq.pipe(writeFile));
+                }));
+
 
                 //return cb("File " + fileIdentifier + " successfully retrieved");
                 //sendReq.pipe(writefile);
@@ -194,11 +204,13 @@ function downloadFile(fileIdentifier, outFile, cb) {
             }
         }
     );
+    */
 }
 
-// Call functions- uncomment at the end to check is working- currently working on why downlad file is not working
-/*
+// Call functions
+// Also need to fit in iteration somewhere
+
 poll(function(x){
     console.log(x);
 });
-*/
+
