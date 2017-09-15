@@ -13,34 +13,31 @@ var TEMPLATE = "SMP2_CRUK_V2_03.15.xlsx"; //Update manually if it changes
 
 appResults = [ '1077084', '1080080', '1080081', '1080082', '1081081' ];
 
-//var i = 0;
+var j = 0;
 
-iterator(appResults, function(o){console.log(o)});
+iterator(appResults, j, function(o){console.log(o)});
 
-function iterator(appRes, cb){
-    var appR = appRes.slice(0);
-    console.log(appR);
-    (function oneAppRes() {
-        var appResId = appR.splice(0, 1)[0];
-        //console.log(appResId);
-        getFileIds(appResId, function(fileIds) {
+function iterator(appRes, j, cb){
+    var appResId = appRes[j];
+    getFileIds(appResId, function(fileIds) {
             //console.log(fileIds);
         //if (err) {
             //cb(err);
             //return
         //}
-        if (appR.length === 0) {
-            cb("File ids retrieved");
+        if (appRes.length-1 === j) {
+            //cb("File ids retrieved");
+            return (console.log("Files retrieved"))
         }
         else {
-            iterFileId(fileIds, 0, function(d) {
-                console.log(d);
-                console.log("Iterating again");
-                oneAppRes(); //This isn't being called
-            });
+            console.log("Iterating");
+            iterFileId(fileIds, 0);
+            //iterFileId(fileIds, 0, function(d) {
+                //console.log(d);
+                //oneAppRes(); //This isn't being called
+            //});
         }
-        });
-    })();
+    });
 }
 
 /*
@@ -73,25 +70,12 @@ iterAppRes(appResults, i, function(appResId) {
 });
 */
 
-// Iterate over appresults ids to get all file ids
-function iterAppRes(appResArr, i, cb){
-    if (i < appResArr.length) {
-        //console.log(appResArr[i]);
-        //Do function call
-        //This bit here needs to be a callback
-        //getFileIds(appResArr[i], function(ret){
-        //console.log(ret);
-        //iterAppRes(appResArr, i+1);
-        return cb(appResArr[i], console.log("App results successfully retrieved"));
-        //});
-    }
-}
-
-function iterFileId(appResFiles, i, cb) {
+function iterFileId(appResFiles, i, done) {
     numFiles = appResFiles.Response.Items.length;
     if (i === (numFiles-1)){
-        return (console.log("Files download completed"));
-    }
+        j+=1;
+        return iterator(appResults, j);
+        }
     if (i < (numFiles-1)) {
         var fileId = appResFiles.Response.Items[i].Id;
         console.log(fileId);
