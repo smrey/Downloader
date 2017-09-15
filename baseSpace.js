@@ -92,7 +92,7 @@ function iterator(appRes, j, cb) {
     var appResId = appRes[j];
     if (appRes.length === j) {
         //cb("File ids retrieved");
-        return cb(console.log("Files retrieved"))
+        return (console.log("Files retrieved"))
     }
     getFileIds(appResId, function(err, fileIds) {
         //console.log(fileIds);
@@ -125,7 +125,7 @@ function iterFileId(appResFiles, i) {
 function getFileIds(appResultId, cb) {
     console.log("Getting file Ids for " + appResultId);
     request.get(
-        APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bai&Offset=0&Limit=50&SortDir=Asc",
+        APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx, .bai&Offset=0&Limit=50&SortDir=Asc",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
