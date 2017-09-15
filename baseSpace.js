@@ -22,6 +22,7 @@ var NEGATIVECONTROL = config.get("negativeControl");
 // Obtain time at which script was launched to enable later timeout
 var STARTTIME = new Date().getTime();
 
+// Global variables required for re-calling outer iteration
 var J;
 var APPRES;
 
@@ -29,7 +30,7 @@ var APPRES;
 var TEMPLATE = "SMP2_CRUK_V2_03.15.xlsx"; //Update manually if it changes
 
 // Variables- adjust these to the desired intervals for polling and timeout of the script
-var POLLINGINTERVAL = 60000; //Change to 60000 for live
+var POLLINGINTERVAL = 10000; //Change to 60000 for live
 var TIMEOUT = 7200000; // 60000 is 1 minute // 7200000 is 2 hours
 
 //temp vars
@@ -45,13 +46,13 @@ function appResultsByProject(cb){
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
                 var projectAppResults = JSON.parse(body);
-                return cb(projectAppResults, console.log("App results successfully retrieved"));
+                return cb(null, projectAppResults, console.log("App results successfully retrieved"));
             }
             else if (response.statusCode !== 200) {
-                return cb('Response status is ' + response.statusCode + " " + body);
+                return cb(Error('Response status is ' + response.statusCode + " " + body));
             }
             else if (error) {
-                return cb(error.message);
+                return cb(Error(error.message));
             }
         }
     );
@@ -80,7 +81,7 @@ function checkAppResultsComplete(appResults, refresh, cb) {
         console.log("All appSessions complete");
         //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
         //In here want to call another function to kick off getting appresults, getting fileids and download of results
-        return cb(appResultsArr); //Previous working code
+        return cb(null, appResultsArr); //Previous working code
         //return cb(iterAppRes(appResultsArr, 0, function(){}));
         //return cb(iterator(APPRES=appResultsArr, J=0, function(output){console.log(output)}));
     }
@@ -183,7 +184,7 @@ function downloadFile(fileIdentifier, outFile, cb) {
 // Repeatedly call the function to check if the results are complete or not
 function poll(){
     var refresh = setInterval(function(){
-        appResultsByProject(function(appRes){
+        appResultsByProject(function(err, appRes){
             checkAppResultsComplete(appRes, refresh, function(err, appResIds) {
                 if (err) return console.log(err.message);
                 iterator(APPRES=appResIds, J=0, function(output){console.log(output)});
