@@ -90,18 +90,24 @@ function poll(cb){
     var refresh = setInterval(function(){
         appResultsByProject(function(appRes){
             checkAppResultsComplete(appRes, refresh, function(appResIds) {
-                //console.log(appRes);
+                //console.log(appResIds);
                 //Working here
-                iterAppRes(appResIds, 0, function(appResId){
-                    console.log(appResId);
+                var i = 0;
+                while (i < appRes.length) {
+                    iterAppRes(appResIds, i, function(appResId) {
+                        console.log(appResId);
+                        i += 1;
+                    });
+                }
+                    /*
                     getFileIds(appResId, function(fileIds){
                         //console.log(s);
                         iterFileId(fileIds, 0, function(fileIdName){
                             console.log(fileIdName);
                             downloadFile(fileIdName[1],fileIdName[0], function(h){});
                         });
-                    });
-                });
+                    });*/
+                //});
             });
         });
     }, POLLINGINTERVAL);
@@ -135,7 +141,7 @@ function iterFileId(appResFiles, i, cb) {
             //tempObj[fileName] = fileID;
             //FILES.push(tempObj);
             f[0] = fileName;
-            f[1] = fileID;
+            f[1] = fileId;
             return cb(f);
             // Implement callback properly here- it isn't working- file download function is not downloading files
             //downloadFile(fileId, fileName, function(y){
