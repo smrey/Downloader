@@ -88,17 +88,16 @@ function checkAppResultsComplete(appResults, refresh, cb) {
 }
 
 //WORKING HERE
-function iterator(appRes, j){
+function iterator(appRes, j, cb) {
     var appResId = appRes[j];
-    getFileIds(appResId, function(fileIds) {
+    if (appRes.length === j) {
+        //cb("File ids retrieved");
+        return cb(console.log("Files retrieved"))
+    }
+    getFileIds(appResId, function(err, fileIds) {
         //console.log(fileIds);
-        //if (err) {
-        //cb(err);
-        //return
-        //}
-        if (appRes.length === j) {
-            //cb("File ids retrieved");
-            return (console.log("Files retrieved"))
+        if (err) {
+            return cb(Error(err));
         }
         else {
             iterFileId(fileIds, 0, j);
@@ -108,7 +107,7 @@ function iterator(appRes, j){
 
 function iterFileId(appResFiles, i) {
     numFiles = appResFiles.Response.Items.length;
-    if (i === (numFiles-1)){
+    if (i === (numFiles-1)) {
         J+=1;
         return iterator(APPRES, J);
     }
@@ -116,7 +115,7 @@ function iterFileId(appResFiles, i) {
         var fileId = appResFiles.Response.Items[i].Id;
         var fileName = appResFiles.Response.Items[i].Name;
         if (fileName !== TEMPLATE && fileName !== NEGATIVECONTROL + ".bam") {
-            downloadFile(fileId, fileName, function(y){console.log(y), iterFileId(appResFiles, i+1);});
+            downloadFile(fileId, fileName, function(result){console.log(result), iterFileId(appResFiles, i+1);});
         }
     }
 }
@@ -131,13 +130,13 @@ function getFileIds(appResultId, cb) {
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
                 var appResultFiles = JSON.parse(body);
-                return cb(appResultFiles);
+                return cb(null, appResultFiles);
             }
             else if (response.statusCode !== 200) {
-                return cb('Response status is ' + response.statusCode + " " + body);
+                return cb(Error('Response status is ' + response.statusCode + " " + body));
             }
             else if (error) {
-                return cb(error.message);
+                return cb(Error(error.message));
             }
         }
     );
@@ -185,18 +184,17 @@ function downloadFile(fileIdentifier, outFile, cb) {
 function poll(){
     var refresh = setInterval(function(){
         appResultsByProject(function(err, appRes){
+            if (err) return console.log(err);
             checkAppResultsComplete(appRes, refresh, function(err, appResIds) {
-                if (err) return console.log(err.message);
-                iterator(APPRES=appResIds, J=0, function(output){console.log(output)});
+                if (err) return console.log(err);
+                iterator(APPRES=appResIds, J=0, function(output){
+                    console.log(output)});
             });
         });
     }, POLLINGINTERVAL);
 }
 
 
-// Call functions
+// Call function
 poll();
-//poll(function(x){
-    //console.log(x);
-//});
 
