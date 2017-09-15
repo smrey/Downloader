@@ -22,14 +22,15 @@ var NEGATIVECONTROL = config.get("negativeControl");
 // Obtain time at which script was launched to enable later timeout
 var STARTTIME = new Date().getTime();
 
-var FILES = [];
+var J;
+var APPRES;
 
 // Variables which may need adjusting
 var TEMPLATE = "SMP2_CRUK_V2_03.15.xlsx"; //Update manually if it changes
 
 // Variables- adjust these to the desired intervals for polling and timeout of the script
-var POLLINGINTERVAL = 60000;
-var TIMEOUT = 720000; // 60000 is 1 minute // 7200000 is 2 hours
+var POLLINGINTERVAL = 60000; //Change to 60000 for live
+var TIMEOUT = 7200000; // 60000 is 1 minute // 7200000 is 2 hours
 
 //temp vars
 var fileID = config.get("fileIDexample");
@@ -57,7 +58,7 @@ function appResultsByProject(cb){
 }
 
 function checkAppResultsComplete(appResults, refresh, cb) {
-    console.log("Running"); //For testing purposes
+    console.log("Checking status of app results");
     var numComplete = 0;
     var appResultsLen = appResults.Response.Items.length;
     var appResultsArr = [];
@@ -72,99 +73,64 @@ function checkAppResultsComplete(appResults, refresh, cb) {
     //Stop execution of the polling function after a certain time has elapsed (assume the process has failed after this time)
     if (new Date().getTime() - STARTTIME > TIMEOUT) {
         clearInterval(refresh);
-        return cb("Polling timed out");
-        //Raise error?
+        return cb(Error("Polling timed out"));
     }
     else if (appResultsLen === NUMPAIRS && numComplete === NUMPAIRS) {
         clearInterval(refresh);
-        console.log("all appSessions complete");
+        console.log("All appSessions complete");
         //setTimeout(function(){appResultsByProject(checkAppResultsComplete)}, POLLINGINTERVAL)  //temp for testing
         //In here want to call another function to kick off getting appresults, getting fileids and download of results
-        return cb(appResultsArr);
+        return cb(appResultsArr); //Previous working code
         //return cb(iterAppRes(appResultsArr, 0, function(){}));
+        //return cb(iterator(APPRES=appResultsArr, J=0, function(output){console.log(output)}));
     }
-}
-
-// Repeatedly call the function to check if the results are complete or not
-function poll(cb){
-    var refresh = setInterval(function(){
-        appResultsByProject(function(appRes){
-            checkAppResultsComplete(appRes, refresh, function(appResIds) {
-                //console.log(appResIds);
-                //Working here
-                var i = 0;
-                while (i < appRes.length) {
-                    iterAppRes(appResIds, i, function(appResId) {
-                        console.log(appResId);
-                        i += 1;
-                    });
-                }
-                    /*
-                    getFileIds(appResId, function(fileIds){
-                        //console.log(s);
-                        iterFileId(fileIds, 0, function(fileIdName){
-                            console.log(fileIdName);
-                            downloadFile(fileIdName[1],fileIdName[0], function(h){});
-                        });
-                    });*/
-                //});
-            });
-        });
-    }, POLLINGINTERVAL);
 }
 
 //WORKING HERE
-
-// Iterate over appresults ids to get all file ids
-function iterAppRes(appResArr, i, cb){
-    if (i < appResArr.length) {
-        //console.log(appResArr[i]);
-        //Do function call
-        //This bit here needs to be a callback
-        //getFileIds(appResArr[i], function(ret){
-            //console.log(ret);
-        return cb(appResArr[i], console.log("App results successfully retrieved"));
-        //iterAppRes(appResArr, i+1); //Note that without this it will only do the first app res for now- TESTING
-        //});
-    }
+function iterator(appRes, j){
+    var appResId = appRes[j];
+    getFileIds(appResId, function(fileIds) {
+        //console.log(fileIds);
+        //if (err) {
+        //cb(err);
+        //return
+        //}
+        if (appRes.length === j) {
+            //cb("File ids retrieved");
+            return (console.log("Files retrieved"))
+        }
+        else {
+            iterFileId(fileIds, 0, j);
+        }
+    });
 }
 
-function iterFileId(appResFiles, i, cb) {
-    if (i < appResFiles.Response.Items.length) {
-        var f = [];
+function iterFileId(appResFiles, i) {
+    numFiles = appResFiles.Response.Items.length;
+    if (i === (numFiles-1)){
+        J+=1;
+        return iterator(APPRES, J);
+    }
+    if (i < (numFiles-1)) {
         var fileId = appResFiles.Response.Items[i].Id;
-        console.log(fileId);
         var fileName = appResFiles.Response.Items[i].Name;
         if (fileName !== TEMPLATE && fileName !== NEGATIVECONTROL + ".bam") {
-            //FILES.push({ [fileName] : fileID}); // Syntax unsupported except in ES6
-            //var tempObj = {};
-            //tempObj[fileName] = fileID;
-            //FILES.push(tempObj);
-            f[0] = fileName;
-            f[1] = fileId;
-            return cb(f);
-            // Implement callback properly here- it isn't working- file download function is not downloading files
-            //downloadFile(fileId, fileName, function(y){
-                //console.log(y);
-                //iterFileId(appResFiles, i+1);
-            //});
+            downloadFile(fileId, fileName, function(y){console.log(y), iterFileId(appResFiles, i+1);});
         }
     }
-    //return (console.log(FILES));
 }
 
 
 // Get file IDs- example below for an appresult id to retrieve xlsx, bam and bai files only
 function getFileIds(appResultId, cb) {
-    console.log("Getting file Ids");
-    console.log(appResultId);
+    console.log("Getting file Ids for " + appResultId);
     request.get(
-        APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bam,.bai&Offset=0&Limit=50&SortDir=Asc",
+        APISERVER + APIVERSION + "/appresults/" + appResultId + "/files?SortBy=Id&Extensions=.xlsx,.bai&Offset=0&Limit=50&SortDir=Asc",
         {qs: {"access_token": ACCESSTOKEN}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
                 var appResultFiles = JSON.parse(body);
-                return cb(appResultFiles, 0);
+                return cb(appResultFiles);
             }
             else if (response.statusCode !== 200) {
                 return cb('Response status is ' + response.statusCode + " " + body);
@@ -181,7 +147,9 @@ function downloadFile(fileIdentifier, outFile, cb) {
     var writeFile = fs.createWriteStream(outFile);
     request.get(
         APISERVER + APIVERSION + "/files/" + fileIdentifier + "/content",
-        {qs: {"access_token": ACCESSTOKEN}}).pipe(writeFile).on('close', function(){cb()});
+        {qs: {"access_token": ACCESSTOKEN}}).pipe(writeFile).on('close', function(){cb("Download Success " + outFile)});
+}
+
 
 
         /*
@@ -211,12 +179,23 @@ function downloadFile(fileIdentifier, outFile, cb) {
         }
     );
     */
+
+// Repeatedly call the function to check if the results are complete or not
+function poll(){
+    var refresh = setInterval(function(){
+        appResultsByProject(function(appRes){
+            checkAppResultsComplete(appRes, refresh, function(err, appResIds) {
+                if (err) return console.log(err.message);
+                iterator(APPRES=appResIds, J=0, function(output){console.log(output)});
+            });
+        });
+    }, POLLINGINTERVAL);
 }
 
-// Call functions
-// Also need to fit in iteration somewhere
 
-poll(function(x){
-    console.log(x);
-});
+// Call functions
+poll();
+//poll(function(x){
+    //console.log(x);
+//});
 
