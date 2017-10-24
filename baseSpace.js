@@ -47,15 +47,15 @@ var POLLINGINTERVAL = 10000; //Change to 60000 for live
 var TIMEOUT = 7200000; // 60000 is 1 minute // 7200000 is 2 hours
 
 // Access datasets through projectid
-function appResultsByProject(cb){
+function datasetsByProject(cb){
     request.get(
         APISERVER + APIVERSION + "/projects/" + PROJECTID + "/datasets",
         {qs: {"access_token": ACCESSTOKEN, "limit": "30"}},
         function (error, response, body) {
             if (!error && response.statusCode === 200) {
-                var projectAppResults = JSON.parse(body);
+                var projectDatasets = JSON.parse(body);
                 //console.log(projectAppResults);
-                return cb(null, projectAppResults, console.log("App results successfully retrieved"));
+                return cb(null, projectDatasets, console.log("App results successfully retrieved"));
             }
             else if (response.statusCode !== 200) {
                 return cb(Error('Response status is ' + response.statusCode + " " + body));
@@ -68,19 +68,26 @@ function appResultsByProject(cb){
 }
 
 // Check whether the app has completed for all of the sample pairs on the sequencing run
-function checkAppResultsComplete(appResults, refresh, cb) {
-    console.log("Checking status of app results");
+function checkDatasetsComplete(dat, refresh, cb) {
+    console.log("Checking status of datasets");
     var numComplete = 0;
-    var appResultsLen = appResults.Response.Items.length;
-    var appResultsArr = [];
+    var numSMP2 = 0;
+    var datLen = dat.Items.length;
+    var datArr = [];
     // See the status of all of the appSessions
-    for (var i = 0; i < appResultsLen; i++) {
-        if (appResults.Response.Items[i].Status === "Complete") {
-            numComplete += 1;
-            // Store the appResults IDs which are needed for downloading the files
-            appResultsArr[i] = appResults.Response.Items[i].Id;
+    for (var i = 0; i < datLen; i++) {
+        if (dat.Items[i].Name === "SMP2") {
+            numSMP2 += 1;
+            if (dat.Items[i].AppSession.ExecutionStatus === "Complete") {
+                numComplete += 1;
+                // Store the appResults IDs which are needed for downloading the files- may no longer be required
+                //datArr[i] = appResults.Response.Items[i].Id;
+            }
         }
     }
+    console.log(numComplete);
+    console.log(numSMP2);
+    console.log(datLen);
 
     // Stop execution of the polling function after a certain time has elapsed
     if (new Date().getTime() - STARTTIME > TIMEOUT) {
@@ -89,10 +96,10 @@ function checkAppResultsComplete(appResults, refresh, cb) {
     }
     // Return app results when the app has completed for all samples. Also includes a check to ensure that
     // the correct number of expected tumour sample pairs have completed
-    else if (appResultsLen === NUMPAIRS && numComplete === NUMPAIRS) {
+    else if (numSMP2 === NUMPAIRS && numComplete === NUMPAIRS) {
         clearInterval(refresh);
         console.log("All appSessions complete");
-        return cb(null, appResultsArr);
+        return cb(null, "placeholder");
     }
 }
 
@@ -204,9 +211,9 @@ function downloadFile(fileIdentifier, outFile, cb) {
 // Repeatedly call the function to check if the results are complete or not
 function poll(){
     var refresh = setInterval(function(){
-        appResultsByProject(function(err, appRes){
+        datasetsByProject(function(err, appRes){
             if (err) throw new Error(console.log(err));
-            checkAppResultsComplete(appRes, refresh, function(err, appResIds) {
+            checkDatasetsComplete(appRes, refresh, function(err, appResIds) {
                 if (err) throw new Error(console.log(err));
                 iterAppRes(APPRES=appResIds, J=0, function(output){
                     console.log(output)});
@@ -218,21 +225,17 @@ function poll(){
 
 // Call initial function
 //poll();
-appResultsByProject(function(err, appRes){
-    if(err) {
-        throw new Error(console.log(err));
-    }
-    else {
-        //console.log(appRes);
-        //console.log(appRes.Items.length);
-        for (var i = 0; i < appRes.Items.length; i++) {
-            //console.log(appRes.Items[i]);
-            //console.log(appRes.Items[i].Name);
-            //console.log(appRes.Items[i].DatasetType);
-            if (appRes.Items[i].Name === "SMP2") {
-                console.log(appRes.Items[i].Name);
-                console.log(appRes.Items[i].AppSession.ExecutionStatus);
-            }
+var refresh = setInterval(function() {
+    datasetsByProject(function (err, dataSets) {
+        if (err) {
+            throw new Error(console.log(err));
         }
-    }
-});
+        else {
+            //console.log(appRes);
+            //console.log(appRes.Items.length);
+            checkDatasetsComplete(dataSets, refresh, function (err, appResIds) {
+                if (err) throw new Error(console.log(err));
+            });
+        }
+    });
+}, POLLINGINTERVAL);
