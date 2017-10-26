@@ -81,14 +81,10 @@ function checkDatasetsComplete(dat, refresh, cb) {
             if (dat.Items[i].AppSession.ExecutionStatus === "Complete") {
                 numComplete += 1;
                 // Store the appResults IDs which are needed for downloading the files- may no longer be required
-                //datArr[i] = appResults.Response.Items[i].Id;
+                datArr[i] = dat.Items[i].Id;
             }
         }
     }
-    console.log(numComplete);
-    console.log(numSMP2);
-    console.log(datLen);
-
     // Stop execution of the polling function after a certain time has elapsed
     if (new Date().getTime() - STARTTIME > TIMEOUT) {
         clearInterval(refresh);
@@ -99,7 +95,7 @@ function checkDatasetsComplete(dat, refresh, cb) {
     else if (numSMP2 === NUMPAIRS && numComplete === NUMPAIRS) {
         clearInterval(refresh);
         console.log("All appSessions complete");
-        return cb(null, "placeholder");
+        return cb(null, datArr);
     }
 }
 
@@ -223,8 +219,35 @@ function poll(){
 }
 
 
+// Get file IDs in each app result. Retrieve xlsx, bam and bai files only.
+function temp(d, cb) {
+    console.log(d);
+    request.get(
+        APISERVER + APIVERSION + "/datasets/" + d[0] + "/files/", //?SortBy=Id&Extensions=.xlsx,.bai" +
+        //"&Offset=0&Limit=50&SortDir=Asc",
+        {qs: {"access_token": ACCESSTOKEN}},
+        function (error, response, body) {
+            if (!error && response.statusCode === 200) {
+                //var appResultFiles = JSON.parse(body);
+                //return cb(null, appResultFiles);
+                console.log(body);
+            }
+            else if (response.statusCode !== 200) {
+                return cb(Error('Response status is ' + response.statusCode + " " + body));
+            }
+            else if (error) {
+                return cb(Error(error.message));
+            }
+        }
+    );
+}
+
+
+
 // Call initial function
 //poll();
+
+var TEMP = "";
 var refresh = setInterval(function() {
     datasetsByProject(function (err, dataSets) {
         if (err) {
@@ -233,8 +256,9 @@ var refresh = setInterval(function() {
         else {
             //console.log(appRes);
             //console.log(appRes.Items.length);
-            checkDatasetsComplete(dataSets, refresh, function (err, appResIds) {
+            checkDatasetsComplete(dataSets, refresh, function (err, datArrIds) {
                 if (err) throw new Error(console.log(err));
+                temp(datArrIds, function(outp){console.log(outp)})
             });
         }
     });
